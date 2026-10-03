@@ -250,7 +250,8 @@ function kMe() {
   h += '<h2>Velg en stil</h2><div class="presets">' + PRESETS.map((p, i) => '<button class="preset" data-a="preset" data-i="' + i + '">' + avatarSvg(p, { top: p.top }) + p.n + '</button>').join('') + '</div>';
   h += '<h2>Lag din egen</h2><div class="card">' + lab('Kjønn') + '<div class="seg" style="margin-bottom:14px">' + [['f', 'Jente'], ['m', 'Gutt'], ['n', 'Annet']].map(g => '<button data-a="g" data-v="' + g[0] + '" class="' + (c.av.g === g[0] ? 'on' : '') + '">' + g[1] + '</button>').join('') + '</div>' +
     lab('Hudtone') + '<div style="margin-bottom:14px">' + sws(SKIN, 'skin', c.av.skin) + '</div>' + lab('Hårstil') + '<div class="seg" style="margin-bottom:14px">' + HAIRS.map(x => '<button data-a="hs" data-v="' + x[0] + '" class="' + (c.av.hs === x[0] ? 'on' : '') + '">' + x[1] + '</button>').join('') + '</div>' +
-    lab('Hårfarge') + '<div style="margin-bottom:14px">' + sws(HAIRC, 'hc', c.av.hc) + '</div>' + lab('Fargen på overdelen') + sws(TOPC, 'tc', c.av.tc) + '</div>';
+    lab('Hårfarge') + '<div style="margin-bottom:8px">' + sws(HAIRC, 'hc', c.av.hc) + '</div>' +
+    lab('Spesielle hårfarger (låses opp)') + '<div class="sws" style="margin-bottom:14px">' + ITEMS.filter(it => it.slot === 'hair').map(it => { const own = c.inv.indexOf(it.id) >= 0; return own ? '<button class="sw2' + (c.av.hc === it.hc ? ' on' : '') + '" style="background:' + it.hc + '" data-a="hc" data-v="' + it.hc + '" aria-label="' + it.n + '"></button>' : '<button class="item locked" style="min-width:76px" data-a="buy" data-id="' + it.id + '" aria-label="' + it.n + ', koster ' + PRICE[it.rar] + ' mynter"><span class="sw" style="background:' + it.hc + ';opacity:.55"></span><small>' + PRICE[it.rar] + ' ◎</small></button>'; }).join('') + '</div>' + lab('Fargen på overdelen') + sws(TOPC, 'tc', c.av.tc) + '</div>';
   [['theme', 'Tema'], ['top', 'Overdel'], ['acc', 'Tilbehør'], ['pet', 'Kjæledyr'], ['frame', 'Ramme'], ['sticker', 'Klistremerke']].forEach(g => {
     h += '<h2>' + g[1] + '</h2><div class="grid">' + ITEMS.filter(it => it.slot === g[0]).map(it => {
       const own = c.inv.indexOf(it.id) >= 0, on = c.eq[it.slot] === it.id;
@@ -488,7 +489,7 @@ async function act(a, el, ev) {
     case 'g': { const c = myChild(); await run(() => setAvatar({ av: Object.assign({}, c.av, { g: v, hs: { f: 'long', m: 'short', n: 'bob' }[v] }) })); break; }
     case 'skin': case 'hs': case 'hc': case 'tc': { const c = myChild(); await run(() => setAvatar({ av: Object.assign({}, c.av, { [a]: v }) })); break; }
     case 'equip': { const c = myChild(), it = ITEMBY[id]; const cur = c.eq[it.slot] === id && it.slot !== 'theme' && it.slot !== 'top' ? null : id; await run(() => setAvatar({ eq: Object.assign({}, c.eq, { [it.slot]: cur }) })); beep(600, .08); break; }
-    case 'buy': { const c = myChild(), it = ITEMBY[id], p = PRICE[it.rar]; if (c.coins < p) { toast('Du trenger ' + (p - c.coins) + ' mynter til'); break; } await run(() => setAvatar({ inv: c.inv.concat([id]), coins: c.coins - p }), it.n + ' er din'); jingle([523, 784]); break; }
+    case 'buy': { const c = myChild(), it = ITEMBY[id], p = PRICE[it.rar]; if (c.coins < p) { toast('Du trenger ' + (p - c.coins) + ' mynter til'); break; } await run(() => setAvatar(Object.assign({ inv: c.inv.concat([id]), coins: c.coins - p }, it.hc ? { av: Object.assign({}, c.av, { hc: it.hc }) } : {})), it.n + ' er din'); jingle([523, 784]); break; }
     case 'title': await run(() => setAvatar({ title: v })); break;
     /* voksne */
     case 'approve': await run(async () => { const q = questById(id); await store.approveQuest(F, id, { name: myName(), home: qHome(q) }); }, 'Godkjent'); jingle([523, 659]); break;

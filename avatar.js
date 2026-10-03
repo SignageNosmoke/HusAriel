@@ -47,12 +47,15 @@ export const ITEMS = [
   { id: 'crown', n: 'Krone', slot: 'acc', e: '👑', rar: 'l' },
   { id: 'hoodie', n: 'Hettegenser', slot: 'top', e: '🧥', rar: 'c' }, { id: 'tee', n: 'T-skjorte', slot: 'top', e: '👕', rar: 'c' },
   { id: 'jacket', n: 'Skinnjakke', slot: 'top', e: '🧥', rar: 'r' },
-  { id: 'cat', n: 'Katt', slot: 'pet', e: '🐱', rar: 'r' }, { id: 'ghost', n: 'Spøkelse', slot: 'pet', e: '👻', rar: 'r' }
+  { id: 'cat', n: 'Katt', slot: 'pet', e: '🐱', rar: 'r' }, { id: 'ghost', n: 'Spøkelse', slot: 'pet', e: '👻', rar: 'r' },
+  // Hårfarger som må låses opp (kjøpes med mynter eller vinnes i kister)
+  { id: 'hair-pink', n: 'Rosa hår', slot: 'hair', hc: '#ff7eb6', rar: 'r' }, { id: 'hair-purple', n: 'Lilla hår', slot: 'hair', hc: '#a45cf0', rar: 'r' },
+  { id: 'hair-neonpink', n: 'Neonrosa hår', slot: 'hair', hc: '#ff2d95', rar: 'e' }, { id: 'hair-midnight', n: 'Midnattslilla hår', slot: 'hair', hc: '#5b2a9e', rar: 'e' }
 ];
 export const PRICE = { c: 40, r: 90, e: 180, l: 400 };
 export const RARITY_NAME = { c: 'Vanlig', r: 'Sjelden', e: 'Episk', l: 'Legendarisk' };
 export const ITEMBY = Object.fromEntries(ITEMS.map(i => [i.id, i]));
-export const SLOT_NAME = { theme: 'tema', frame: 'ramme', sticker: 'klistremerke', acc: 'tilbehør', top: 'overdel', pet: 'kjæledyr' };
+export const SLOT_NAME = { theme: 'tema', frame: 'ramme', sticker: 'klistremerke', acc: 'tilbehør', top: 'overdel', pet: 'kjæledyr', hair: 'hårfarge' };
 
 export const SKIN = ['#ffe0c7', '#f3c9a5', '#d9a37a', '#a8714a', '#7a4a2e'];
 export const HAIRC = ['#2b1b12', '#6b4226', '#b5651d', '#e3b04b', '#c1403d', '#7a6ff0', '#2d2d33'];
