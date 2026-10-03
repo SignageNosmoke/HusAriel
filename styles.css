@@ -133,3 +133,11 @@ h2{font-family:var(--display);font-size:13px;margin:24px 0 10px;font-weight:600;
 .hist{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
 .hist.undone{opacity:.45;text-decoration:line-through}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.goal .gt{font-weight:800;font-size:18px;margin-top:2px}
+.goal .gp{font-size:34px;font-weight:800;color:var(--gold);line-height:1}
+.goal .gp small{font-size:16px}
+.gbar{position:relative;height:14px;background:var(--card2);border-radius:999px;margin-top:12px;overflow:hidden}
+.gbar i{display:block;height:100%;background:linear-gradient(90deg,var(--xp-d),var(--gold));border-radius:999px;transition:width .8s}
+.gbar b{position:absolute;top:0;bottom:0;width:2px;background:var(--bg);opacity:.7}
+.goal.reached{outline:2px solid var(--gold)}

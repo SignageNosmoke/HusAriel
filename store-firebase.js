@@ -87,8 +87,12 @@ export function createFirebaseStore(cfg) {
         const r = L.approve(cs.data(), q, s, who.home);
         tx.update(cref, clean(r.child));
         tx.update(qref, { st: 'done', doneKey: L.cycleKey(q.rep, s) });
-        tx.set(doc(C(fid, 'ledger')), clean({ at: Date.now(), type: 'quest', childId: q.childId, childName: cs.data().name, title: q.title, kr: q.kr, xp: q.xp, home: who.home, wk: r.info.wk, di: r.info.di, by: who.name, undone: false, qid }));
+        tx.set(doc(C(fid, 'ledger')), clean({ at: Date.now(), type: 'quest', childId: q.childId, childName: cs.data().name, title: q.title, kr: q.kr, xp: q.xp, home: who.home, wk: r.info.wk, di: r.info.di, g: r.info.g, by: who.name, undone: false, qid }));
         tx.set(doc(C(fid, 'notifs')), clean({ at: Date.now(), type: 'approved', to: q.childId, from: who.name, text: q.title, payload: r.info }));
+        if (r.info.goalHit) {
+          const gt = (cs.data().goal && cs.data().goal.prize) || 'målet';
+          tx.set(doc(C(fid, 'notifs')), clean({ at: Date.now() + 1, type: 'msg', to: 'adults', from: cs.data().name, text: cs.data().name + ' har nådd målet: ' + gt }));
+        }
         return r.info;
       });
     },

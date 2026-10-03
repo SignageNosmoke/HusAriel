@@ -160,7 +160,33 @@ function qcard(q, mine) {
   if (s === 'back') st = '<div class="st" style="color:var(--bad)">' + esc(q.msg || 'Prøv igjen') + '</div>';
   return '<div class="' + cls + '"><div class="ico">' + ico(q.ic) + '</div><div class="grow"><div class="t">' + esc(q.title) + '</div><div class="rw"><span class="kr">+' + q.kr + ' kr</span><span class="xp">+' + q.xp + ' XP</span></div>' + st + '</div>' + act + '</div>';
 }
-function myQuests() { const c = myChild(); return S.data.quests.filter(q => q.childId === c.id && homeVisible(q)); }
+function myQuests() { const c = myChild(); if (!c) return []; return S.data.quests.filter(q => q.childId === c.id && homeVisible(q)); }
+
+function goalBlock(c, adult) {
+  const g = c.goal; if (!g || !g.on) return '';
+  const v = L.goalView(g), pace = { ahead: 'Foran skjema', on: 'På skjema', behind: 'Bak skjema' }[v.pace] || '';
+  const ticks = [25, 50, 75].map(m => '<b class="' + (v.pct >= m ? 'hit' : '') + '" style="left:' + m + '%"></b>').join('');
+  let sub;
+  if (g.reached) sub = adult ? 'Målet er nådd. Husk å gi belønningen.' : 'Målet er nådd. Belønningen er din.';
+  else sub = (g.xp || 0) + ' av ' + g.target + ' XP' + (v.days != null ? ' · ' + v.days + ' dager igjen' : '') + (pace ? ' · ' + pace : '');
+  return '<div class="card goal' + (g.reached ? ' reached' : '') + '"><div class="row"><div class="grow"><div class="st">' + (adult ? 'Langtidsmål' : 'Stort mål') + '</div><div class="gt">' + esc(g.title || 'Mål') + '</div>' + (g.prize ? '<div class="st">Belønning: ' + esc(g.prize) + '</div>' : '') + '</div><div class="gp">' + v.pct + '<small>%</small></div></div>' +
+    '<div class="gbar"><i style="width:' + v.pct + '%"></i>' + ticks + '</div><div class="st" style="margin-top:8px">' + esc(sub) + '</div>' +
+    (adult && g.reached ? '<button class="btn sm ok" style="margin-top:10px" data-a="goalclaim" data-c="' + c.id + '">Belønning gitt, fjern målet</button>' : '') + '</div>';
+}
+function goalEditor(c) {
+  const g = c.goal, pot = L.weeklyPotential(S.data.quests.filter(q => q.childId === c.id));
+  if (!g) return '<div class="st" style="margin-top:12px">Langtidsmål (for eksempel en sydentur)</div><button class="btn sm ghost" style="margin-top:6px" data-a="goalnew" data-c="' + c.id + '">Lag langtidsmål</button>';
+  const v = L.goalView(g), id = c.id;
+  const inp = (f, label, val, ex) => '<label class="field"><span>' + label + '</span><input data-f="' + f + '" data-c="' + id + '" value="' + esc(val) + '"' + (ex || '') + '></label>';
+  let h = '<div class="st" style="margin-top:14px"><b>Langtidsmål</b></div>' +
+    inp('gTitle', 'Navn', g.title, ' maxlength="30"') + inp('gPrize', 'Belønning', g.prize, ' maxlength="40"') +
+    '<div class="two"><label class="field"><span>XP som kreves</span><input type="number" min="100" step="100" data-f="gTarget" data-c="' + id + '" value="' + g.target + '"></label>' +
+    '<label class="field"><span>Frist (valgfri)</span><input type="date" data-f="gEnd" data-c="' + id + '" value="' + esc(g.end || '') + '"></label></div>' +
+    '<div class="st">Fremdrift: ' + (g.xp || 0) + ' av ' + g.target + ' XP (' + v.pct + ' %). XP teller fra ' + esc(g.start || '') + '.' + (pot ? ' Hvis alle quests til ' + esc(c.name) + ' gjøres hver uke, gir det ca. ' + pot + ' XP per uke.' : '') + (v.perWeek != null && !g.reached ? ' For å nå målet innen fristen trengs ca. ' + v.perWeek + ' XP per uke.' : '') + '</div>' +
+    '<div class="two" style="margin-top:10px"><button class="btn sm ghost" style="width:100%" data-a="goalreset" data-c="' + id + '">' + (S.confirm === 'greset:' + id ? 'Trykk igjen for å nullstille' : 'Nullstill fremdrift') + '</button><button class="btn sm ghost" style="width:100%" data-a="goaldel" data-c="' + id + '">' + (S.confirm === 'gdel:' + id ? 'Trykk igjen for å slette' : 'Slett mål') + '</button></div>';
+  return h;
+}
+
 function kHome() {
   const c = myChild();
   if (!c) return '<div class="empty">Fant ikke profilen din. Be en forelder sjekke at koden din er riktig.</div>';
@@ -178,6 +204,7 @@ function kHome() {
   if (splitOn()) h += '<div class="st" style="margin-top:12px">Denne uka: ' + esc(homeName(curHome())) + '</div>';
   if (boss) h += '<h2>Dagens boss</h2><div class="hero"><div class="tag">Mest XP akkurat nå</div><div class="ht">' + esc(boss.title) + '</div><div class="rw" style="margin-bottom:14px"><span class="kr">+' + boss.kr + ' kr</span><span class="xp">+' + boss.xp + ' XP</span></div>' + (L.qState(boss) === 'taken' ? '<button class="btn ok" data-a="done" data-id="' + boss.id + '">Ferdig</button>' : '<button class="btn" data-a="take" data-id="' + boss.id + '">Ta bossen</button>') + '</div>';
   if (free.length) h += '<h2>Raske XP</h2>' + free.map(q => qcard(q)).join('');
+  if (c.goal && c.goal.on) h += '<h2>Årsmål</h2>' + goalBlock(c, false);
   h += '<h2>Ukens mål</h2><div class="card"><div class="row"><div class="grow">' + w.done + ' av ' + c.weekGoal + ' quests</div><div class="st">Mål nådd = ekstra kiste</div></div><div class="bar2"><i style="width:' + Math.min(100, w.done / c.weekGoal * 100) + '%"></i></div></div>';
   return h;
 }
@@ -290,7 +317,7 @@ function aFam() {
   h += '</div><h2>Barn</h2>';
   ks.forEach(c => {
     h += '<div class="card"><div class="row"><div class="grow"><b>' + esc(c.name) + '</b><div class="st">Level ' + L.levelOf(c.xpTotal) + '</div></div><label class="field" style="margin:0"><span>Ukemål (quests)</span><select data-f="goal" data-c="' + c.id + '">' + [3, 4, 5, 6, 7].map(n => '<option' + (c.weekGoal === n ? ' selected' : '') + '>' + n + '</option>').join('') + '</select></label></div>' +
-      '<div class="st" style="margin-top:10px">Kode barnet bruker for å bli med</div><div style="margin-top:6px"><span class="code">' + esc(c.code || '') + '</span></div></div>';
+      goalEditor(c) + '<div class="st" style="margin-top:14px">Kode barnet bruker for å bli med</div><div style="margin-top:6px"><span class="code">' + esc(c.code || '') + '</span></div></div>';
   });
   h += '<div class="card"><form id="childform"><label class="field"><span>Legg til barn (navn)</span><input id="c-name" maxlength="14" required></label><button class="btn" type="submit">Legg til</button></form></div>';
   h += '<h2>Konto</h2><div class="card"><div class="st">Innlogget som ' + esc(S.user.email || '') + '</div><div style="margin-top:12px" class="two"><button class="btn ghost" data-a="logout">Logg ut</button>' + (store.demo ? '<button class="btn ghost" data-a="resetdemo">Nullstill demo</button>' : '') + '</div></div>';
@@ -321,7 +348,7 @@ function checkCelebrate() {
   const p = next.payload || { kr: 0, xp: 0 };
   jingle(p.lvlUp ? [523, 659, 784, 1047] : [523, 659, 784]); vib(p.lvlUp ? [60, 40, 120] : 30);
   showOv('<div class="ov-big pop">' + (p.lvlUp ? 'Level ' + p.lvl : 'Godkjent') + '</div><div class="ov-sub">' + esc(p.lvlUp ? 'Rolig nå. Du går forbi alle.' : OK[Math.floor(Math.random() * OK.length)]) + '</div>' +
-    '<div class="ov-card pop"><div class="n" style="color:var(--money)">+' + p.kr + ' kr</div><div class="n" style="color:var(--xp)">+' + p.xp + ' XP</div>' + (p.perfect ? '<div class="st" style="margin-top:8px">Ukemål nådd: ekstra kiste</div>' : '') + ((p.chests || []).length ? '<div class="st" style="margin-top:8px">Ny kiste: ' + esc(p.chests.join(', ')) + '</div>' : '') + '</div>');
+    '<div class="ov-card pop"><div class="n" style="color:var(--money)">+' + p.kr + ' kr</div><div class="n" style="color:var(--xp)">+' + p.xp + ' XP</div>' + (p.perfect ? '<div class="st" style="margin-top:8px">Ukemål nådd: ekstra kiste</div>' : '') + (p.goalHit ? '<div class="st" style="margin-top:8px"><b>Stort mål nådd!</b> ' + esc((myChild().goal && myChild().goal.prize) || '') + '</div>' : p.gm ? '<div class="st" style="margin-top:8px">' + p.gm + ' % av det store målet</div>' : '') + ((p.chests || []).length ? '<div class="st" style="margin-top:8px">Ny kiste: ' + esc(p.chests.join(', ')) + '</div>' : '') + '</div>');
 }
 
 /* ---------- handlinger ---------- */
@@ -374,6 +401,14 @@ async function onField(f, t) {
   else if (f === 'homeA') await run(() => store.updateFamily(F, { 'homeNames.a': t.value.trim() || 'Hos mamma' }));
   else if (f === 'homeB') await run(() => store.updateFamily(F, { 'homeNames.b': t.value.trim() || 'Hos pappa' }));
   else if (f === 'myHome') await run(() => store.updateFamily(F, { ['adults.' + S.user.uid + '.home']: t.value || null }));
+  else if (/^g(Title|Prize|Target|End)$/.test(f) && t.dataset.c) {
+    const c = S.data.children[t.dataset.c], g = Object.assign({}, c.goal);
+    if (f === 'gTitle') g.title = t.value.trim();
+    else if (f === 'gPrize') g.prize = t.value.trim();
+    else if (f === 'gTarget') { g.target = Math.max(100, Math.round(+t.value || 0)); if (g.reached && (g.xp || 0) < g.target) { g.reached = false; g.reachedAt = ''; } else if (!g.reached && (g.xp || 0) >= g.target) { g.reached = true; g.reachedAt = L.today(); } }
+    else if (f === 'gEnd') g.end = t.value || '';
+    await run(() => store.saveChild(F, c.id, { goal: g }));
+  }
   else if (f === 'goal') await run(() => store.saveChild(F, t.dataset.c, { weekGoal: +t.value }));
 }
 
@@ -432,6 +467,10 @@ async function act(a, el, ev) {
     case 'delquest': if (S.confirm === 'del:' + id) { S.confirm = null; await run(() => store.deleteQuest(F, id), 'Slettet'); } else { S.confirm = 'del:' + id; render(); } break;
     case 'pay': await run(() => { const c = S.data.children[el.dataset.c], h = el.dataset.h; return store.payout(F, c.id, h, c.owed[h] || 0, { name: myName() }); }, 'Utbetaling registrert'); jingle([784, 1047]); break;
     case 'undo': await run(() => store.undoLedger(F, id, { name: myName() }), 'Godkjenning trukket tilbake'); break;
+    case 'goalnew': { const t = L.today(), cid = el.dataset.c; await run(() => store.saveChild(F, cid, { goal: { on: true, title: 'Sydentur', prize: 'Tur til syden', target: 6000, xp: 0, start: t, end: L.addDays(t, 365), reached: false, reachedAt: '' } }), 'Mål opprettet'); break; }
+    case 'goalreset': { const cid = el.dataset.c; if (S.confirm === 'greset:' + cid) { S.confirm = null; const g = Object.assign({}, S.data.children[cid].goal, { xp: 0, reached: false, reachedAt: '', start: L.today() }); await run(() => store.saveChild(F, cid, { goal: g }), 'Fremdrift nullstilt'); } else { S.confirm = 'greset:' + cid; render(); } break; }
+    case 'goaldel': { const cid = el.dataset.c; if (S.confirm === 'gdel:' + cid) { S.confirm = null; await run(() => store.saveChild(F, cid, { goal: null }), 'Mål slettet'); } else { S.confirm = 'gdel:' + cid; render(); } break; }
+    case 'goalclaim': await run(() => store.saveChild(F, el.dataset.c, { goal: null }), 'Målet er fjernet'); break;
     case 'swapweek': await run(() => store.updateFamily(F, { 'split.first': fam().split.first === 'a' ? 'b' : 'a' }), 'Byttet uke'); break;
     default: break;
   }

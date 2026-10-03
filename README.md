@@ -47,6 +47,9 @@ Ikke bruk telefon-innlogging (SMS koster penger).
 - **iPhone (Safari):** Del-ikonet → *Legg til på Hjem-skjerm*.
 - **Android (Chrome):** menyen → *Installer app*.
 
+## Langtidsmål (for eksempel sydentur)
+Under **Familie → barnets kort → Lag langtidsmål** setter du navn, belønning, XP som kreves og eventuelt en frist. Barnet ser en fremdriftsbar med prosent og merker ved 25, 50 og 75 %. Foreldre ser hvor mange XP per uke som trengs for å nå målet i tide, og hva barnet ville fått hvis alle quests ble gjort hver uke. Bruk det til å sette målet så høyt at det krever mye. XP teller fra startdatoen, og «Angre» på en godkjenning trekker også tilbake målet. Når målet er nådd, får foreldrene et varsel, og du trykker «Belønning gitt, fjern målet» når reisen er avtalt. Barnet kan ikke endre målet selv.
+
 ## Varsler
 Varslene ligger inne i appen: bjelle, rød teller og tall i fanetittelen. De oppdateres i sanntid mens appen er åpen, og vises neste gang appen åpnes ellers. Push til lukket app er ikke med, siden det krever betalt Firebase-plan eller en ekstra tjeneste.
 

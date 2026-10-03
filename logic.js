@@ -43,10 +43,29 @@ export function newChild(name) {
     inv: ['dusk', 'hoodie', 'tee'], chests: [], coins: 0, title: 'Nybegynner',
     xpTotal: 0, owed: { a: 0, b: 0 }, earnedTotal: 0, paidTotal: 0,
     streak: 0, bestStreak: 0, shields: 0, lastDay: '', approved: 0,
-    weekKey: '', weekArr: [0, 0, 0, 0, 0, 0, 0], weekDone: 0, weekGoal: 5, counts: {}, spinDay: ''
+    weekKey: '', weekArr: [0, 0, 0, 0, 0, 0, 0], weekDone: 0, weekGoal: 5, counts: {}, spinDay: '', goal: null
   };
 }
 
+// Langtidsmål (for eksempel «Sydentur»): XP som teller fra startdato, valgfri frist.
+export function goalPct(g) { return g && g.target > 0 ? Math.min(100, Math.floor((g.xp || 0) / g.target * 100)) : 0; }
+export function goalView(g, s) {
+  s = s || today();
+  var pct = goalPct(g), left = Math.max(0, g.target - (g.xp || 0)), out = { pct: pct, left: left, days: null, pace: null, perWeek: null };
+  if (g.end) {
+    out.days = Math.max(0, daysBetween(s, g.end));
+    var total = Math.max(1, daysBetween(g.start || s, g.end)), el = Math.max(0, daysBetween(g.start || s, s));
+    var want = el / total * 100;
+    out.pace = g.reached ? null : (pct >= want + 3 ? 'ahead' : pct >= want - 3 ? 'on' : 'behind');
+    out.perWeek = out.days > 0 ? Math.ceil(left / Math.max(1, out.days / 7)) : left;
+  }
+  return out;
+}
+export function weeklyPotential(quests) {
+  var m = { 'Daglig': 7, 'Ukentlig': 1, 'Månedlig': 12 / 52, 'Én gang': 0 }, t = 0;
+  quests.forEach(function (q) { t += q.xp * (m[q.rep] || 0); });
+  return Math.round(t);
+}
 export function titlesFor(c) {
   var l = levelOf(c.xpTotal), t = ['Nybegynner'];
   if (l >= 3) t.push('Lærling');
@@ -93,7 +112,15 @@ export function approve(child, quest, s, home) {
   c.owed[home] = (c.owed[home] || 0) + quest.kr;
   c.earnedTotal += quest.kr;
   c.counts[quest.title] = (c.counts[quest.title] || 0) + 1;
-  return { child: c, info: { kr: quest.kr, xp: quest.xp, lvl: after, lvlUp: after > before, chests: chests, perfect: perfect, streak: c.streak, wk: wk, di: di, home: home } };
+  var g = false, gm = 0, gHit = false;
+  if (c.goal && c.goal.on && !c.goal.reached && s >= (c.goal.start || '')) {
+    var p0 = goalPct(c.goal); g = true;
+    c.goal.xp = (c.goal.xp || 0) + quest.xp;
+    var p1 = goalPct(c.goal);
+    [25, 50, 75, 100].forEach(function (m) { if (p0 < m && p1 >= m) gm = m; });
+    if (p1 >= 100) { c.goal.reached = true; c.goal.reachedAt = s; gHit = true; }
+  }
+  return { child: c, info: { g: g, gm: gm, goalHit: gHit, kr: quest.kr, xp: quest.xp, lvl: after, lvlUp: after > before, chests: chests, perfect: perfect, streak: c.streak, wk: wk, di: di, home: home } };
 }
 
 export function undo(child, e) {
@@ -104,6 +131,10 @@ export function undo(child, e) {
   c.approved = Math.max(0, c.approved - 1);
   c.coins = Math.max(0, c.coins - Math.ceil(e.xp / 2));
   if (c.counts[e.title]) c.counts[e.title] = Math.max(0, c.counts[e.title] - 1);
+  if (e.g && c.goal) {
+    c.goal.xp = Math.max(0, (c.goal.xp || 0) - e.xp);
+    if (c.goal.reached && c.goal.xp < c.goal.target) { c.goal.reached = false; c.goal.reachedAt = ''; }
+  }
   if (c.weekKey === e.wk) { c.weekArr[e.di] = Math.max(0, c.weekArr[e.di] - 1); c.weekDone = Math.max(0, c.weekDone - 1); }
   return c;
 }
