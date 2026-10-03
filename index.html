@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="nb"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0f0e14"><style>html,body{margin:0}</style></head><body>
+<title>HusHelt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=DM+Sans:wght@500;700&display=swap">
+<style>
+/* Layout: telefonramme, profilkort øverst på Hjem, fire faner nederst, overlegg for belønninger. Mørkt, rolig, med lilla-rosa aksent. */
+:root{
+  --bg:#0f0e14; --card:#1a1822; --card2:#252232; --fg:#f3f1fa; --muted:#9b97b0;
+  --xp:#b39cff; --xp-d:#7b5cf0; --money:#5eead4; --flame:#ffa26b; --gold:#f5c76b; --bad:#ff7a90; --line:#2e2a3d;
+  --display:'Bricolage Grotesque','Helvetica Neue',system-ui,sans-serif; --body:'DM Sans',system-ui,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#f7f5fb; --card:#ffffff; --card2:#efecf7; --fg:#1a1727; --muted:#6a6580;
+  --xp:#6a47e0; --xp-d:#6a47e0; --money:#0f8f7e; --flame:#c75d12; --gold:#9a6a00; --bad:#c42b49; --line:#e1dcef; color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#f7f5fb; --card:#ffffff; --card2:#efecf7; --fg:#1a1727; --muted:#6a6580;
+  --xp:#6a47e0; --xp-d:#6a47e0; --money:#0f8f7e; --flame:#c75d12; --gold:#9a6a00; --bad:#c42b49; --line:#e1dcef; color-scheme:light}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-weight:500;font-size:15px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--xp);outline-offset:2px}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#app{max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px}
+.logo{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:-.3px}
+.logo span{color:var(--xp)}
+.modebtn{border:1px solid var(--line);padding:7px 14px;border-radius:999px;font-size:13px;color:var(--muted)}
+main{flex:1;overflow-y:auto;padding:8px 16px 20px;min-width:0}
+nav{display:grid;grid-template-columns:repeat(4,1fr);padding:8px 8px 10px;background:var(--bg);border-top:1px solid var(--line)}
+nav button{padding:6px 0;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);position:relative}
+nav button.on{color:var(--fg)}
+nav button.on svg{color:var(--xp)}
+nav .badge{position:absolute;top:0;left:calc(50% + 8px)}
+h2{font-family:var(--display);font-size:13px;margin:24px 0 10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.card{background:var(--card);border-radius:20px;padding:16px}
+.row{display:flex;gap:12px;align-items:center}
+.grow{flex:1;min-width:0}
+.profile{border-radius:26px;padding:20px;color:#fff;position:relative;overflow:hidden}
+.profile::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 85% -10%,rgba(255,255,255,.28),transparent 55%);pointer-events:none}
+.profile>*{position:relative;z-index:1}
+.mono{width:96px;height:96px;border-radius:32%;padding:3px;flex:none}
+.mono .in{width:100%;height:100%;border-radius:30%;background:rgba(255,255,255,.2);overflow:hidden}
+.mono svg{width:100%;height:100%;display:block}
+.sws{display:flex;gap:10px;flex-wrap:wrap}
+.sw2{width:34px;height:34px;border-radius:50%;border:2px solid transparent;box-shadow:inset 0 0 0 2px var(--bg)}
+.sw2.on{border-color:var(--fg)}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.preset{background:var(--card);border-radius:18px;padding:8px 6px 10px;text-align:center;font-size:12px;color:var(--muted)}
+.preset svg{width:100%;max-width:84px;display:block;margin:0 auto 4px;border-radius:26%;background:var(--card2)}
+.preset.on{outline:2px solid var(--xp);color:var(--fg)}
+.promo{display:flex;gap:12px;align-items:center;background:var(--card);border:1px dashed var(--xp);border-radius:18px;padding:12px 14px;margin-top:10px}
+.f-none{background:rgba(255,255,255,.35)}
+.f-gold{background:conic-gradient(#f5c76b,#fff2c4,#c79a2e,#f5c76b)}
+.f-holo{background:conic-gradient(#7af,#f7a,#fd7,#7fd,#7af)}
+.pname{font-family:var(--display);font-size:26px;font-weight:800;line-height:1.05;letter-spacing:-.5px}
+.pill{display:inline-block;background:rgba(0,0,0,.28);padding:3px 11px;border-radius:999px;font-size:12px;margin-top:6px}
+.sticker{position:absolute!important;top:14px;right:16px;font-size:26px;opacity:.95}
+.xpbar{height:8px;background:rgba(255,255,255,.25);border-radius:999px;overflow:hidden;margin-top:18px}
+.xpbar i{display:block;height:100%;background:#fff;border-radius:999px;transition:width .8s ease}
+.xpnum{font-size:12px;margin-top:6px;display:flex;justify-content:space-between;opacity:.9;font-variant-numeric:tabular-nums}
+.bar2{height:6px;background:var(--card2);border-radius:999px;overflow:hidden;margin-top:10px}
+.bar2 i{display:block;height:100%;background:var(--xp);border-radius:999px}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.chip{background:var(--card);border-radius:18px;padding:12px}
+.chip .l{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+.chip .l svg{width:14px;height:14px}
+.chip .v{font-family:var(--display);font-size:24px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.mom{display:flex;gap:10px;align-items:flex-start;margin-top:14px}
+.mom .av{width:32px;height:32px;border-radius:50%;background:var(--card2);display:grid;place-items:center;font-size:13px;font-weight:700;flex:none;color:var(--muted)}
+.bubble{background:var(--card);border-radius:4px 16px 16px 16px;padding:10px 14px;flex:1;min-width:0;font-size:14px}
+.btn{display:block;width:100%;min-height:50px;padding:12px 18px;border-radius:14px;background:linear-gradient(135deg,var(--xp-d),#c05ad6);color:#fff;font-weight:700;font-size:15px;transition:transform .1s,opacity .1s}
+.btn:active{transform:scale(.98)}
+.btn.ok{background:var(--money);color:#06231f}
+.btn.ghost{background:var(--card2);color:var(--fg)}
+.btn.sm{min-height:38px;padding:8px 14px;font-size:13px;width:auto;border-radius:12px}
+.btn:disabled{opacity:.4}
+.hero{background:var(--card);border-radius:22px;padding:18px;border:1px solid var(--line)}
+.hero .tag{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--xp);font-weight:700}
+.hero .ht{font-family:var(--display);font-size:22px;font-weight:800;margin:6px 0 4px;letter-spacing:-.3px}
+.q{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:18px;padding:12px;margin-bottom:8px}
+.q .ico{width:46px;height:46px;border-radius:14px;background:var(--card2);display:grid;place-items:center;flex:none;color:var(--xp)}
+.q .t{font-weight:700}
+.rw{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;font-size:12px;font-variant-numeric:tabular-nums}
+.rw .kr{color:var(--money)}.rw .xp{color:var(--xp)}
+.st{font-size:12px;color:var(--muted);margin-top:2px}
+.q.wait{opacity:.8}
+.q.back{outline:1px solid var(--bad)}
+.seg{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.seg button{border:1px solid var(--line);padding:7px 14px;border-radius:999px;font-size:13px;white-space:nowrap}
+.seg button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chests{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.chest{background:var(--card);border-radius:20px;padding:16px 12px;text-align:center}
+.chest .tile{width:64px;height:64px;border-radius:18px;margin:0 auto 10px;display:grid;place-items:center;color:#fff}
+.chest .tile svg{width:30px;height:30px}
+.t-mys{background:linear-gradient(135deg,#6a47e0,#a86bd6)}.t-luck{background:linear-gradient(135deg,#2bb6a0,#4a9fe0)}.t-epic{background:linear-gradient(135deg,#a44bd6,#f06ba0)}.t-leg{background:linear-gradient(135deg,#d9a032,#f5d27a)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.item{background:var(--card);border-radius:16px;aspect-ratio:1;display:grid;place-items:center;position:relative;font-size:24px}
+.item.locked{color:var(--muted)}
+.item.on{outline:2px solid var(--xp)}
+.item small{position:absolute;bottom:5px;font-size:10px;color:var(--muted)}
+.sw{width:30px;height:30px;border-radius:50%;margin-bottom:8px}
+.overlay{position:absolute;inset:0;background:rgba(8,7,12,.92);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;z-index:20;color:#f3f1fa}
+.overlay[hidden]{display:none}
+.overlay canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ov-big{font-family:var(--display);font-size:48px;font-weight:800;line-height:1;letter-spacing:-1px;background:linear-gradient(135deg,#b39cff,#ff8fb5);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ov-sub{font-size:17px;opacity:.85}
+.ov-card{background:var(--card);border-radius:22px;padding:18px 28px;min-width:240px}
+.ov-card .n{font-family:var(--display);font-size:32px;font-weight:800;font-variant-numeric:tabular-nums}
+.pop{animation:pop .45s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes pop{from{transform:scale(.85);opacity:0}}
+.field{display:block;margin-bottom:12px}
+.field span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+.field input,.field select{width:100%;min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:8px 12px;font:inherit}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bars{display:flex;align-items:flex-end;gap:8px;height:110px;margin-top:8px}
+.bars div{flex:1;background:var(--card2);border-radius:8px;min-height:4px;transition:height .8s}
+.bars div.today{background:var(--xp)}
+.days{display:flex;gap:8px;margin-top:6px}
+.days span{flex:1;text-align:center;font-size:11px;color:var(--muted)}
+.toast{position:absolute;left:16px;right:16px;bottom:78px;background:var(--fg);color:var(--bg);padding:11px 16px;border-radius:14px;z-index:30;text-align:center;font-weight:700;animation:pop .25s both}
+.badge{display:inline-grid;place-items:center;min-width:17px;height:17px;border-radius:999px;background:var(--bad);color:#fff;font-size:10px;padding:0 4px}
+.empty{text-align:center;color:var(--muted);padding:28px 8px}
+.big-n{font-family:var(--display);font-size:48px;font-weight:800;color:var(--money);letter-spacing:-1px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div id="app">
+  <header>
+    <div class="logo">Hus<span>Helt</span></div>
+    <button class="modebtn" id="modebtn"></button>
+  </header>
+  <main id="main"></main>
+  <nav id="nav"></nav>
+  <div class="overlay" id="ov" hidden><canvas id="cv"></canvas><div id="ovbody" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:14px"></div></div>
+</div>
+
+<script>
+(function(){
+  var P={
+    home:"M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
+    quests:"M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2",
+    gift:"M4 10h16v10H4zM3 6h18v4H3zM12 6v14M12 6C10 2 6 3 7 6M12 6c2-4 6-3 5 0",
+    me:"M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0",
+    ctrl:"M4 5h16v11H4zM8 21h8M12 16v5",
+    plus:"M12 5v14M5 12h14",
+    wallet:"M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l2-3h12M16 14h2",
+    chart:"M5 21V11M12 21V4M19 21v-8",
+    flame:"M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z",
+    coin:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v10M9 10c0-1 1-2 3-2s3 1 3 2-1 2-3 2-3 1-3 2 1 2 3 2 3-1 3-2",
+    washer:"M5 3h14a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM12 18a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM8 5.5h.01",
+    dish:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+    trash:"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6",
+    vac:"M7 3v9a4 4 0 0 0 4 4h5M18 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM7 3h3",
+    bath:"M3 12h18v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zM6 12V6a2 2 0 0 1 4 0M7 19l-1 2M17 19l1 2",
+    spark:"M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z",
+    kitchen:"M5 3v7a2 2 0 0 0 4 0V3M7 10v11M16 3c-2 2-3 5-3 8h3v10"
+  };
+  function ico(n){return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="'+P[n]+'"/></svg>'}
+  var NPC=["Oppvaskmaskinen har ikke tømt seg selv. Fortsatt.","Gratis XP ligger her. Bare sånn at du vet det.","Mamma har sett at du åpnet appen.","Én quest til, så holder streaken.","Alt kan gjøres på under 10 minutter. Sjekket.","Det er stille hjemme. Mistenkelig stille."];
+  var OK=["Ferdig. Mamma ble overrasket.","Det der var ryddig.","Sånn, ja.","Streaken lever.","Ikke dårlig.","Det går unna."];
+  var BACK=["Nesten. Sjekk hjørnene en gang til.","Mangler litt. Prøv igjen."];
+  var THEMES={dusk:'linear-gradient(145deg,#5b43d6,#a45ad6 60%,#f08fb0)',peach:'linear-gradient(145deg,#ff9a76,#ff6f91)',mint:'linear-gradient(145deg,#1fc8a0,#2b86d4)',noir:'linear-gradient(145deg,#1d1d26,#47476a)',aurora:'linear-gradient(145deg,#22c8e0,#8b5cf6 55%,#f472b6)'};
+  var ITEMS=[
+    {id:'dusk',n:'Dusk',slot:'theme',c:THEMES.dusk},{id:'peach',n:'Peach',slot:'theme',c:THEMES.peach},{id:'mint',n:'Mint',slot:'theme',c:THEMES.mint},{id:'noir',n:'Noir',slot:'theme',c:THEMES.noir},{id:'aurora',n:'Aurora',slot:'theme',c:THEMES.aurora},
+    {id:'gold',n:'Gullring',slot:'frame'},{id:'holo',n:'Holo',slot:'frame'},
+    {id:'star',n:'Stjerne',slot:'sticker',e:'✦'},{id:'moon',n:'Måne',slot:'sticker',e:'☾'},{id:'bolt',n:'Lyn',slot:'sticker',e:'⚡'},{id:'heart',n:'Hjerte',slot:'sticker',e:'♥'},
+    {id:'headphones',n:'Hodetelefoner',slot:'acc',e:'🎧'},{id:'glasses',n:'Briller',slot:'acc',e:'👓'},{id:'shades',n:'Solbriller',slot:'acc',e:'🕶️'},{id:'cap',n:'Caps',slot:'acc',e:'🧢'},{id:'beanie',n:'Lue',slot:'acc',e:'🧶'},{id:'hoops',n:'Ringer',slot:'acc',e:'⭕'},
+    {id:'hoodie',n:'Hettegenser',slot:'top',e:'🧥'},{id:'tee',n:'T-skjorte',slot:'top',e:'👕'},{id:'jacket',n:'Skinnjakke',slot:'top',e:'🧥'},
+    {id:'cat',n:'Katt',slot:'pet',e:'🐱'},{id:'ghost',n:'Spøkelse',slot:'pet',e:'👻'}
+  ];
+  var SKIN=['#ffe0c7','#f3c9a5','#d9a37a','#a8714a','#7a4a2e'];
+  var HAIRC=['#2b1b12','#6b4226','#b5651d','#e3b04b','#c1403d','#7a6ff0','#2d2d33'];
+  var TOPC=['#ff7a59','#7b5cf0','#2bb6a0','#f5c76b','#e8e8ef','#1d1d26'];
+  var HAIRS=[['long','Langt'],['bob','Bob'],['pony','Hestehale'],['bun','Knute'],['short','Kort'],['curly','Krøll'],['buzz','Raka']];
+  var PRESETS=[
+    {n:'Chill',g:'f',skin:'#f3c9a5',hs:'long',hc:'#6b4226',top:'hoodie',tc:'#7b5cf0'},
+    {n:'Skater',g:'m',skin:'#d9a37a',hs:'short',hc:'#2b1b12',top:'tee',tc:'#ff7a59'},
+    {n:'Indie',g:'n',skin:'#ffe0c7',hs:'bob',hc:'#c1403d',top:'hoodie',tc:'#2bb6a0'},
+    {n:'Gamer',g:'f',skin:'#a8714a',hs:'pony',hc:'#7a6ff0',top:'hoodie',tc:'#1d1d26'},
+    {n:'Sporty',g:'f',skin:'#ffe0c7',hs:'bun',hc:'#e3b04b',top:'tee',tc:'#f5c76b'},
+    {n:'Kaos',g:'n',skin:'#7a4a2e',hs:'curly',hc:'#2d2d33',top:'tee',tc:'#e8e8ef'}
+  ];
+  function avatarSvg(av,eq){
+    var s=av.skin,h=av.hc,t=av.tc,hs=av.hs,top=eq.top||'hoodie',acc=eq.acc,pet=eq.pet,B='',F='',body='';
+    if(hs==='long')B='<path d="M27 56C24 28 44 17 60 17s36 11 33 39l3 46H24z" fill="'+h+'"/>';
+    else if(hs==='bob')B='<path d="M27 56C24 28 44 17 60 17s36 11 33 39v16c0 6-4 8-8 8H35c-4 0-8-2-8-8z" fill="'+h+'"/>';
+    else if(hs==='pony')B='<path d="M86 40c16 2 22 26 10 46-4-14-8-24-12-32z" fill="'+h+'"/>';
+    else if(hs==='bun')B='<circle cx="60" cy="14" r="10" fill="'+h+'"/>';
+    else if(hs==='curly')B=[[30,50,11],[90,50,11],[34,34,12],[86,34,12],[48,24,13],[72,24,13],[60,21,13]].map(function(c){return '<circle cx="'+c[0]+'" cy="'+c[1]+'" r="'+c[2]+'" fill="'+h+'"/>'}).join('');
+    if(hs==='short')F='<path d="M32 56C30 30 46 22 60 22s30 8 28 34c-4-10-10-16-18-18-10 2-22 4-28 18z" fill="'+h+'"/>';
+    else if(hs==='curly')F='<path d="M36 52C40 38 50 34 60 34s20 4 24 18C74 44 46 44 36 52z" fill="'+h+'"/>';
+    else if(hs==='buzz')F='<path d="M33 52C34 34 48 28 60 28s26 6 27 24C76 40 44 40 33 52z" fill="'+h+'" fill-opacity=".6"/>';
+    else F='<path d="M33 57C33 34 48 26 60 26s28 8 27 31C84 44 76 38 62 38 50 38 40 44 33 57z" fill="'+h+'"/>';
+    if(top==='jacket')body='<path d="M20 120C20 99 36 92 60 92s40 7 40 28z" fill="#2a2a35"/><path d="M50 93L60 120 70 93z" fill="'+t+'"/><path d="M50 93L44 110M70 93L76 110" stroke="#15151c" stroke-width="2"/>';
+    else if(top==='tee')body='<path d="M20 120C20 99 36 92 60 92s40 7 40 28z" fill="'+t+'"/><path d="M48 93Q60 105 72 93" fill="rgba(0,0,0,.22)"/>';
+    else body='<path d="M20 120C20 99 36 92 60 92s40 7 40 28z" fill="'+t+'"/><path d="M42 93C46 105 74 105 78 93" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="3"/><path d="M54 101v10M66 101v10" stroke="#fff" stroke-width="2" opacity=".7"/>';
+    var face='<circle cx="50" cy="60" r="2.8" fill="#2a1c16"/><circle cx="70" cy="60" r="2.8" fill="#2a1c16"/><circle cx="51" cy="59" r=".9" fill="#fff"/><circle cx="71" cy="59" r=".9" fill="#fff"/>'+
+      '<path d="M44 52Q50 49 56 52M64 52Q70 49 76 52" fill="none" stroke="'+h+'" stroke-width="'+(av.g==='m'?3.2:2.2)+'" stroke-linecap="round"/>'+
+      (av.g==='f'?'<path d="M46 58l-3-2M74 58l3-2" stroke="#2a1c16" stroke-width="1.6" stroke-linecap="round"/>':'')+
+      '<circle cx="44" cy="67" r="4" fill="#ff8fa0" opacity=".3"/><circle cx="76" cy="67" r="4" fill="#ff8fa0" opacity=".3"/>'+
+      '<path d="M59 64q1 3 3 2" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="1.4" stroke-linecap="round"/><path d="M53 71Q60 77 67 71" fill="none" stroke="#a2554a" stroke-width="2.2" stroke-linecap="round"/>';
+    var a='';
+    if(acc==='headphones')a='<path d="M33 58C31 28 89 28 87 58" fill="none" stroke="#22222a" stroke-width="4.5"/><rect x="28" y="52" width="9" height="20" rx="4.5" fill="#22222a"/><rect x="83" y="52" width="9" height="20" rx="4.5" fill="#22222a"/><rect x="30.5" y="56" width="3" height="12" rx="1.5" fill="'+t+'"/><rect x="86.5" y="56" width="3" height="12" rx="1.5" fill="'+t+'"/>';
+    else if(acc==='glasses')a='<g fill="rgba(255,255,255,.12)" stroke="#22222a" stroke-width="2.2"><rect x="40" y="53" width="17" height="13" rx="5"/><rect x="63" y="53" width="17" height="13" rx="5"/></g><path d="M57 59h6" stroke="#22222a" stroke-width="2.2"/>';
+    else if(acc==='shades')a='<g fill="#15151c"><rect x="39" y="53" width="19" height="13" rx="5"/><rect x="62" y="53" width="19" height="13" rx="5"/></g><path d="M58 58h4" stroke="#15151c" stroke-width="2.4"/><path d="M43 56l5 0" stroke="#fff" stroke-width="1.4" opacity=".5"/>';
+    else if(acc==='cap')a='<path d="M32 50C32 28 48 21 60 21s28 7 28 29z" fill="#e8344f"/><path d="M26 50h68c4 0 6 2 6 4H20c0-2 2-4 6-4z" fill="#b8203a"/>';
+    else if(acc==='beanie')a='<path d="M32 50C30 26 48 18 60 18s30 8 28 32z" fill="#f5c76b"/><rect x="31" y="44" width="58" height="9" rx="4.5" fill="#d9a032"/><circle cx="60" cy="15" r="5" fill="#f5c76b"/>';
+    else if(acc==='hoops')a='<circle cx="35" cy="71" r="5" fill="none" stroke="#f5c76b" stroke-width="2"/><circle cx="85" cy="71" r="5" fill="none" stroke="#f5c76b" stroke-width="2"/>';
+    var p='';
+    if(pet==='cat')p='<g transform="translate(6 86)"><path d="M2 9L5 0l6 5 6-5 3 9v8a9 9 0 0 1-18 0z" fill="#f0a35e"/><circle cx="7.5" cy="12" r="1.4" fill="#222"/><circle cx="14.5" cy="12" r="1.4" fill="#222"/><path d="M9.5 16h3" stroke="#222" stroke-width="1.3" stroke-linecap="round"/></g>';
+    else if(pet==='ghost')p='<g transform="translate(90 84)"><path d="M1 30V14a10 10 0 0 1 20 0v16l-3.3-3-3.3 3-3.3-3-3.3 3-3.3-3z" fill="#fff"/><circle cx="8" cy="14" r="1.7" fill="#222"/><circle cx="14" cy="14" r="1.7" fill="#222"/></g>';
+    return '<svg viewBox="0 0 120 120" role="img" aria-label="Avatar">'+B+'<rect x="52" y="80" width="16" height="16" fill="'+s+'"/>'+body+'<circle cx="35" cy="60" r="4.5" fill="'+s+'"/><circle cx="85" cy="60" r="4.5" fill="'+s+'"/><ellipse cx="60" cy="58" rx="'+(av.g==='m'?26:25)+'" ry="28" fill="'+s+'"/>'+face+F+a+p+'</svg>';
+  }
+  function profile(){
+    var it=ITEMS.filter(function(x){return x.id===S.eq.theme})[0];
+    var st=ITEMS.filter(function(x){return x.id===S.eq.sticker})[0];
+    var fr=S.eq.frame?'f-'+S.eq.frame:'f-none';
+    return '<div class="profile" style="background:'+it.c+'">'+(st?'<div class="sticker" aria-hidden="true">'+st.e+'</div>':'')+
+      '<div class="row"><div class="mono '+fr+'"><div class="in">'+avatarSvg(S.av,S.eq)+'</div></div><div class="grow"><div class="pname">'+esc(S.name||'Deg')+'</div><div class="pill">'+esc(S.title)+'</div></div></div>'+
+      '<div class="xpbar"><i style="width:'+pct()+'%"></i></div><div class="xpnum"><span>Level '+S.lvl+' · '+S.xp+' / '+need(S.lvl)+' XP</span><span>Neste: Level '+(S.lvl+1)+'</span></div></div>';
+  }
+  function sws(arr,key,cur){return '<div class="sws">'+arr.map(function(c){return '<button class="sw2'+(c===cur?' on':'')+'" style="background:'+c+'" data-a="'+key+'" data-v="'+c+'" aria-label="Velg farge"></button>'}).join('')+'</div>'}
+  function kidMe(){
+    var h='<div style="margin-top:8px">'+profile()+'</div>';
+    h+='<h2>Navn</h2><label class="field"><input id="f-name" value="'+esc(S.name)+'" maxlength="14" aria-label="Kallenavn"></label>';
+    h+='<h2>Velg en stil</h2><div class="presets">'+PRESETS.map(function(p,i){return '<button class="preset" data-a="preset" data-i="'+i+'">'+avatarSvg(p,{top:p.top})+p.n+'</button>'}).join('')+'</div>';
+    h+='<h2>Lag din egen</h2><div class="card"><div class="st" style="margin:0 0 6px">Kjønn</div><div class="seg" style="margin-bottom:14px">'+[['f','Jente'],['m','Gutt'],['n','Annet']].map(function(g){return '<button data-a="g" data-v="'+g[0]+'" class="'+(S.av.g===g[0]?'on':'')+'">'+g[1]+'</button>'}).join('')+'</div>'+
+      '<div class="st" style="margin:0 0 6px">Hudtone</div><div style="margin-bottom:14px">'+sws(SKIN,'skin',S.av.skin)+'</div>'+
+      '<div class="st" style="margin:0 0 6px">Hårstil</div><div class="seg" style="margin-bottom:14px">'+HAIRS.map(function(x){return '<button data-a="hs" data-v="'+x[0]+'" class="'+(S.av.hs===x[0]?'on':'')+'">'+x[1]+'</button>'}).join('')+'</div>'+
+      '<div class="st" style="margin:0 0 6px">Hårfarge</div><div style="margin-bottom:14px">'+sws(HAIRC,'hc',S.av.hc)+'</div>'+
+      '<div class="st" style="margin:0 0 6px">Fargen på overdelen</div>'+sws(TOPC,'tc',S.av.tc)+'</div>';
+    var grp=[['theme','Tema'],['top','Overdel'],['acc','Tilbehør'],['pet','Kjæledyr'],['frame','Ramme'],['sticker','Klistremerke']];
+    grp.forEach(function(g){
+      h+='<h2>'+g[1]+'</h2><div class="grid">'+ITEMS.filter(function(it){return it.slot===g[0]}).map(function(it){
+        var own=S.inv.indexOf(it.id)>=0,on=S.eq[it.slot]===it.id;
+        var vis=own?(it.c?'<div class="sw" style="background:'+it.c+'"></div>':(it.e||'◯')):'🔒';
+        return '<button class="item'+(own?'':' locked')+(on?' on':'')+'" '+(own?'data-a="equip" data-id="'+it.id+'"':'disabled')+' aria-label="'+it.n+'">'+vis+'<small>'+(own?it.n:'Låst')+'</small></button>'}).join('')+'</div>';
+    });
+    h+='<h2>Titler</h2><div class="seg">'+S.titles.map(function(t){return '<button data-a="title" data-t="'+esc(t)+'" class="'+(S.title===t?'on':'')+'">'+esc(t)+'</button>'}).join('')+'</div>';
+    h+='<h2>Din uke</h2><div class="card"><div class="bars">'+S.week.map(function(v,i){return '<div class="'+(i===3?'today':'')+'" style="height:'+Math.max(4,v*22)+'px"></div>'}).join('')+'</div><div class="days">'+['Man','Tir','Ons','Tor','Fre','Lør','Søn'].map(function(d){return '<span>'+d+'</span>'}).join('')+'</div></div>';
+    return h;
+  }
+  var ITEMS_OLD=[
+    {id:'dusk',n:'Dusk',slot:'theme',c:THEMES.dusk},{id:'peach',n:'Peach',slot:'theme',c:THEMES.peach},{id:'mint',n:'Mint',slot:'theme',c:THEMES.mint},{id:'noir',n:'Noir',slot:'theme',c:THEMES.noir},{id:'aurora',n:'Aurora',slot:'theme',c:THEMES.aurora},
+    {id:'gold',n:'Gullring',slot:'frame'},{id:'holo',n:'Holo',slot:'frame'},
+    {id:'star',n:'Stjerne',slot:'sticker',e:'✦'},{id:'moon',n:'Måne',slot:'sticker',e:'☾'},{id:'bolt',n:'Lyn',slot:'sticker',e:'⚡'},{id:'heart',n:'Hjerte',slot:'sticker',e:'♥'}
+  ];
+  var S={mode:'kid',tab:'home',cat:'today',name:'Deg',
+    lvl:4,xp:63,kr:85,streak:5,approved:7,weekDone:3,weekGoal:5,spinUsed:false,coins:20,npc:0,
+    chests:[{t:'Mystery Box'},{t:'Lucky Chest'}],
+    inv:['dusk','peach','star'],eq:{theme:'dusk',frame:null,sticker:'star'},
+    title:'Oppvask-ninja',titles:['Nybegynner','Oppvask-ninja'],
+    week:[2,3,1,4,2,0,0],
+    quests:[
+      {id:1,t:'Tøm vaskemaskinen',ic:'washer',kr:10,xp:10,rep:'Daglig',st:'open',cat:'today'},
+      {id:2,t:'Tøm oppvaskmaskinen',ic:'dish',kr:15,xp:25,rep:'Daglig',st:'open',cat:'today'},
+      {id:3,t:'Ta ut søppel',ic:'trash',kr:10,xp:10,rep:'Daglig',st:'open',cat:'today'},
+      {id:4,t:'Støvsuge rommet',ic:'vac',kr:20,xp:40,rep:'Ukentlig',st:'open',cat:'week'},
+      {id:5,t:'Vaske bad',ic:'bath',kr:50,xp:100,rep:'Ukentlig',st:'open',cat:'week',boss:true},
+      {id:6,t:'Rydde kjøkken',ic:'kitchen',kr:25,xp:40,rep:'Månedlig',st:'open',cat:'week'}
+    ],nid:7};
+  S.inv=['dusk','peach','star','hoodie','tee','headphones'];
+  S.eq={theme:'dusk',frame:null,sticker:'star',acc:'headphones',top:'hoodie',pet:null};
+  S.av={g:'f',skin:'#f3c9a5',hs:'long',hc:'#6b4226',tc:'#7b5cf0'};
+  S.avDone=false;
+  var $=function(s){return document.querySelector(s)};
+  var main=$('#main'),nav=$('#nav'),ov=$('#ov'),ovbody=$('#ovbody');
+  function need(n){return 40+12*n}
+  function pick(a){return a[Math.floor(Math.random()*a.length)]}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  var AC=null;
+  function beep(f,d,t){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain();o.type=t||'sine';o.frequency.value=f;g.gain.value=.06;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
+  function jingle(a){a.forEach(function(f,i){setTimeout(function(){beep(f,.22,'triangle')},i*110)})}
+  function vib(n){try{navigator.vibrate&&navigator.vibrate(n)}catch(e){}}
+  function toast(m){var t=document.createElement('div');t.className='toast';t.textContent=m;$('#app').appendChild(t);setTimeout(function(){t.remove()},2200)}
+  function pending(){return S.quests.filter(function(q){return q.st==='wait'}).length}
+  function pct(){return Math.min(100,Math.round(S.xp/need(S.lvl)*100))}
+
+  function profileOld(compact){
+    var it=ITEMS.filter(function(x){return x.id===S.eq.theme})[0];
+    var st=ITEMS.filter(function(x){return x.id===S.eq.sticker})[0];
+    var fr=S.eq.frame?'f-'+S.eq.frame:'f-none';
+    return '<div class="profile" style="background:'+it.c+'">'+(st?'<div class="sticker" aria-hidden="true">'+st.e+'</div>':'')+
+      '<div class="row"><div class="mono '+fr+'"><b>'+esc((S.name||'D').charAt(0).toUpperCase())+'</b></div><div class="grow"><div class="pname">'+esc(S.name||'Deg')+'</div><div class="pill">'+esc(S.title)+'</div></div></div>'+
+      '<div class="xpbar"><i style="width:'+pct()+'%"></i></div><div class="xpnum"><span>Level '+S.lvl+' · '+S.xp+' / '+need(S.lvl)+' XP</span><span>Neste: Level '+(S.lvl+1)+'</span></div></div>';
+  }
+  function renderNav(){
+    var tabs=S.mode==='kid'?[['home','home','Hjem'],['quests','quests','Quests'],['loot','gift','Loot'],['me','me','Meg']]:[['p-home','ctrl','Kontroll'],['p-new','plus','Ny quest'],['p-pay','wallet','Lønn'],['p-stats','chart','Statistikk']];
+    nav.innerHTML=tabs.map(function(t){
+      var b=(t[0]==='p-home'&&pending())?'<span class="badge">'+pending()+'</span>':'';
+      return '<button data-t="'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'">'+ico(t[1])+t[2]+b+'</button>'}).join('');
+    $('#modebtn').textContent=S.mode==='kid'?'Foreldremodus':'Tilbake til din side';
+  }
+  function qcard(q){
+    var cls='q'+(q.st==='wait'?' wait':'')+(q.st==='back'?' back':'');
+    var act='',st='';
+    if(q.st==='open'||q.st==='back')act='<button class="btn sm" data-a="take" data-id="'+q.id+'">Ta quest</button>';
+    if(q.st==='taken'){act='<button class="btn sm ok" data-a="done" data-id="'+q.id+'">Ferdig</button>';st='<div class="st">Pågår</div>'}
+    if(q.st==='wait')st='<div class="st">Venter på godkjenning</div>';
+    if(q.st==='back')st='<div class="st" style="color:var(--bad)">'+esc(q.msg||'Prøv igjen')+'</div>';
+    return '<div class="'+cls+'"><div class="ico">'+ico(q.ic)+'</div><div class="grow"><div class="t">'+esc(q.t)+'</div><div class="rw"><span class="kr">+'+q.kr+' kr</span><span class="xp">+'+q.xp+' XP</span></div>'+st+'</div>'+act+'</div>';
+  }
+  function kidHome(){
+    var boss=S.quests.filter(function(q){return q.boss&&q.st!=='wait'&&q.st!=='done'})[0];
+    var free=S.quests.filter(function(q){return q.xp<=10&&(q.st==='open'||q.st==='back')}).slice(0,2);
+    var h=profile()+(S.avDone?'':'<div class="promo"><div class="grow"><b>Lag avataren din</b><div class="st">Velg stil, hår, klær og tilbehør.</div></div><button class="btn sm" data-a="goavatar">Lag</button></div>')+
+      '<div class="chips"><div class="chip"><div class="l">'+ico('coin')+'Denne uka</div><div class="v" style="color:var(--money)">'+S.kr+' kr</div></div>'+
+      '<div class="chip"><div class="l">'+ico('flame')+'Streak</div><div class="v">'+S.streak+' d</div></div>'+
+      '<div class="chip"><div class="l">'+ico('gift')+'Neste kiste</div><div class="v">'+(S.approved%3)+'/3</div></div></div>'+
+      '<div class="mom"><div class="av">M</div><div class="bubble">'+esc(S.npcMsg||NPC[S.npc])+'</div></div>';
+    if(boss)h+='<h2>Dagens boss</h2><div class="hero"><div class="tag">Mest XP i dag</div><div class="ht">'+esc(boss.t)+'</div><div class="rw" style="margin-bottom:14px"><span class="kr">+'+boss.kr+' kr</span><span class="xp">+'+boss.xp+' XP</span></div>'+
+      (boss.st==='taken'?'<button class="btn ok" data-a="done" data-id="'+boss.id+'">Ferdig</button>':'<button class="btn" data-a="take" data-id="'+boss.id+'">Ta bossen</button>')+'</div>';
+    if(free.length)h+='<h2>Raske XP</h2>'+free.map(qcard).join('');
+    h+='<h2>Ukens mål</h2><div class="card"><div class="row"><div class="grow">'+S.weekDone+' av '+S.weekGoal+' quests</div><div class="st">Perfect Week = ekstra kiste</div></div><div class="bar2"><i style="width:'+Math.min(100,S.weekDone/S.weekGoal*100)+'%"></i></div></div>';
+    return h;
+  }
+  function kidQuests(){
+    var cats=[['today','I dag'],['week','Denne uka'],['event','Event']];
+    var h='<div class="seg">'+cats.map(function(c){return '<button data-cat="'+c[0]+'" class="'+(S.cat===c[0]?'on':'')+'">'+c[1]+'</button>'}).join('')+'</div>';
+    if(S.cat==='event')return h+'<h2>Sesong 1</h2><div class="hero"><div class="tag">Event · 8 uker</div><div class="ht">Høstryddingen</div><div class="st" style="margin-bottom:12px">Fullfør quests, fyll sesongpasset og lås opp eksklusive temaer og klistremerker. Double XP-helg om 6 dager.</div><div class="bar2"><i style="width:22%"></i></div><div class="st" style="margin-top:6px">Nivå 7 av 30</div></div>';
+    var list=S.quests.filter(function(q){return q.cat===S.cat&&q.st!=='done'});
+    return h+'<h2>Quests</h2>'+(list.length?list.map(qcard).join(''):'<div class="empty">Alt er gjort. Ingenting å se her.</div>');
+  }
+  function tile(t){var c=t==='Legendary Chest'?'t-leg':t==='Epic Chest'?'t-epic':t==='Lucky Chest'?'t-luck':'t-mys';return '<div class="tile '+c+'">'+ico('gift')+'</div>'}
+  function kidLoot(){
+    var h='<h2>Kister</h2>';
+    h+=S.chests.length?'<div class="chests">'+S.chests.map(function(c,i){return '<div class="chest">'+tile(c.t)+'<div>'+c.t+'</div><button class="btn sm" style="margin-top:10px;width:100%" data-a="open" data-i="'+i+'">Åpne</button></div>'}).join('')+'</div>':'<div class="empty">Ingen kister akkurat nå. Hver 3. godkjente quest gir en ny.</div>';
+    h+='<h2>Daglig spin</h2><div class="card"><div class="st" style="margin-bottom:12px">Ett gratis snurr per dag. Alltid gevinst.</div><button class="btn" data-a="spin" '+(S.spinUsed?'disabled':'')+'>'+(S.spinUsed?'Kom tilbake i morgen':'Snurr')+'</button></div>';
+    h+='<div class="st" style="margin-top:14px;text-align:center">Sjanser: vanlig 70 % · sjelden 22 % · episk 7 % · legendarisk 1 %.</div>';
+    return h;
+  }
+  function kidMeOld(){
+    var h='<div style="margin-top:8px">'+profile()+'</div>';
+    h+='<h2>Navn</h2><label class="field"><span class="st" style="display:none">Navn</span><input id="f-name" value="'+esc(S.name)+'" maxlength="14" aria-label="Kallenavn"></label>';
+    var grp=[['theme','Tema'],['frame','Ramme'],['sticker','Klistremerke']];
+    grp.forEach(function(g){
+      h+='<h2>'+g[1]+'</h2><div class="grid">'+ITEMS.filter(function(it){return it.slot===g[0]}).map(function(it){
+        var own=S.inv.indexOf(it.id)>=0,on=S.eq[it.slot]===it.id;
+        var vis=own?(it.c?'<div class="sw" style="background:'+it.c+'"></div>':(it.e||'◯')):'🔒';
+        return '<button class="item'+(own?'':' locked')+(on?' on':'')+'" '+(own?'data-a="equip" data-id="'+it.id+'"':'disabled')+' aria-label="'+it.n+'">'+vis+'<small>'+(own?it.n:'Låst')+'</small></button>'}).join('')+'</div>';
+    });
+    h+='<h2>Titler</h2><div class="seg">'+S.titles.map(function(t){return '<button data-a="title" data-t="'+esc(t)+'" class="'+(S.title===t?'on':'')+'">'+esc(t)+'</button>'}).join('')+'</div>';
+    h+='<h2>Din uke</h2><div class="card"><div class="bars">'+S.week.map(function(v,i){return '<div class="'+(i===3?'today':'')+'" style="height:'+Math.max(4,v*22)+'px"></div>'}).join('')+'</div><div class="days">'+['Man','Tir','Ons','Tor','Fre','Lør','Søn'].map(function(d){return '<span>'+d+'</span>'}).join('')+'</div></div>';
+    return h;
+  }
+  function pHome(){
+    var w=S.quests.filter(function(q){return q.st==='wait'});
+    var h='<h2>Venter på deg</h2>';
+    h+=w.length?w.map(function(q){return '<div class="card" style="margin-bottom:10px"><div class="row"><div class="q" style="margin:0;padding:0;background:none"><div class="ico">'+ico(q.ic)+'</div></div><div class="grow"><div class="t" style="font-weight:700">'+esc(q.t)+'</div><div class="st">Bilde levert · +'+q.kr+' kr · +'+q.xp+' XP</div></div></div><div class="two" style="margin-top:12px"><button class="btn sm ghost" data-a="reject" data-id="'+q.id+'" style="width:100%">Send tilbake</button><button class="btn sm ok" data-a="approve" data-id="'+q.id+'" style="width:100%">Godkjenn</button></div></div>'}).join(''):'<div class="empty">Ingenting å godkjenne. Bytt til barnesiden, fullfør en quest, og kom tilbake hit for å teste.</div>';
+    h+='<h2>I dag</h2><div class="chips"><div class="chip"><div class="l">Quests</div><div class="v">'+S.week[3]+'</div></div><div class="chip"><div class="l">Streak</div><div class="v">'+S.streak+'</div></div><div class="chip"><div class="l">Opptjent</div><div class="v">'+S.kr+' kr</div></div></div>';
+    h+='<h2>Alle quests</h2>'+S.quests.filter(function(q){return q.st!=='done'}).map(function(q){return '<div class="q"><div class="ico">'+ico(q.ic)+'</div><div class="grow"><div class="t">'+esc(q.t)+'</div><div class="st">'+q.rep+' · '+q.kr+' kr · '+q.xp+' XP</div></div><button class="btn sm ghost" data-a="del" data-id="'+q.id+'" aria-label="Fjern '+esc(q.t)+'">'+ico('trash')+'</button></div>'}).join('');
+    return h;
+  }
+  function pNew(){
+    return '<h2>Ny quest</h2><div class="card"><label class="field"><span>Tittel</span><input id="f-t" value="Rydde rommet"></label>'+
+      '<div class="two"><label class="field"><span>Belønning (kr)</span><input id="f-kr" type="number" value="20" min="0"></label><label class="field"><span>XP</span><input id="f-xp" type="number" value="30" min="0"></label></div>'+
+      '<label class="field"><span>Gjentakelse</span><select id="f-r"><option>Daglig</option><option>Ukentlig</option><option>Månedlig</option><option>Én gang</option></select></label>'+
+      '<div class="st" style="margin-bottom:12px">Tommelfingerregel: 10 min = 10 XP, 30 min = 40 XP.</div><button class="btn" data-a="create">Opprett quest</button></div>';
+  }
+  function pPay(){
+    return '<h2>Ukelønn</h2><div class="card"><div class="st">Opptjent denne uka</div><div class="big-n">'+S.kr+' kr</div><div style="height:12px"></div><button class="btn ok" data-a="pay" '+(S.kr?'':'disabled')+'>Utbetal '+S.kr+' kr</button></div>'+
+      '<h2>Send melding</h2><div class="card"><div class="seg">'+['Fin innsats i går','Bossen er svak i dag','Mamma følger med'].map(function(m){return '<button data-a="msg" data-m="'+m+'">'+m+'</button>'}).join('')+'</div><div class="st" style="margin-top:10px">Vises på barnets Hjem-side.</div></div>';
+  }
+  function pStats(){
+    var tot=S.week.reduce(function(a,b){return a+b},0);
+    return '<h2>Oversikt</h2><div class="chips"><div class="chip"><div class="l">Uke</div><div class="v">'+tot+'</div></div><div class="chip"><div class="l">Måned</div><div class="v">'+(tot*4+S.approved)+'</div></div><div class="chip"><div class="l">Totalt</div><div class="v">'+(S.approved+62)+'</div></div></div>'+
+      '<h2>Aktivitet denne uka</h2><div class="card"><div class="bars">'+S.week.map(function(v,i){return '<div class="'+(i===3?'today':'')+'" style="height:'+Math.max(4,v*22)+'px"></div>'}).join('')+'</div><div class="days">'+['Man','Tir','Ons','Tor','Fre','Lør','Søn'].map(function(d){return '<span>'+d+'</span>'}).join('')+'</div></div>'+
+      '<h2>Høydepunkter</h2><div class="card"><div style="margin-bottom:10px">Beste uke: 7 av 7 quests</div><div style="margin-bottom:10px">Favorittoppgave: Tømme oppvaskmaskinen</div><div>Mest utført: Ta ut søppel (24 ganger)</div></div>';
+  }
+  function render(){
+    var v={'home':kidHome,'quests':kidQuests,'loot':kidLoot,'me':kidMe,'p-home':pHome,'p-new':pNew,'p-pay':pPay,'p-stats':pStats}[S.tab];
+    var top=main.scrollTop;main.innerHTML=v();main.scrollTop=top;renderNav();
+  }
+
+  var cv=$('#cv'),cx=cv.getContext('2d'),parts=[],raf=0;
+  function confetti(){
+    cv.width=ov.clientWidth;cv.height=ov.clientHeight;parts=[];
+    var cols=['#b39cff','#5eead4','#f5c76b','#ff8fb5','#ffffff'];
+    for(var i=0;i<90;i++)parts.push({x:cv.width/2,y:cv.height/2.4,vx:(Math.random()-.5)*13,vy:-Math.random()*12-3,r:Math.random()*5+2.5,c:cols[i%5],a:Math.random()*6});
+    cancelAnimationFrame(raf);
+    (function f(){cx.clearRect(0,0,cv.width,cv.height);parts.forEach(function(p){p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.a+=.2;cx.fillStyle=p.c;cx.save();cx.translate(p.x,p.y);cx.rotate(p.a);cx.fillRect(-p.r,-p.r/2,p.r*2,p.r);cx.restore()});
+      if(parts.some(function(p){return p.y<cv.height+20}))raf=requestAnimationFrame(f)})();
+  }
+  function showOv(html){ov.hidden=false;ovbody.innerHTML=html;confetti();var b=ov.querySelector('#ovok');if(b){b.onclick=closeOv;b.focus()}}
+  function closeOv(){ov.hidden=true;cancelAnimationFrame(raf);render()}
+  function addXp(n){var up=0;S.xp+=n;while(S.xp>=need(S.lvl)){S.xp-=need(S.lvl);S.lvl++;up++}return up}
+  function approve(q){
+    q.st=q.rep==='Én gang'?'done':'open';
+    S.kr+=q.kr;S.approved++;S.weekDone=Math.min(S.weekGoal,S.weekDone+1);S.week[3]++;
+    var up=addXp(q.xp),chest=false;
+    if(S.approved%3===0){S.chests.push({t:'Mystery Box'});chest=true}
+    S.streak=Math.max(S.streak,6);
+    if(up){S.coins+=25;if(S.inv.indexOf('moon')<0)S.inv.push('moon')}
+    jingle(up?[523,659,784,1047]:[523,659,784]);vib(up?[60,40,120]:30);
+    S.mode='kid';S.tab='home';
+    showOv('<div class="ov-big pop">'+(up?'Level '+S.lvl:'Godkjent')+'</div><div class="ov-sub">'+(up?'Rolig nå. Du går forbi alle.':pick(OK))+'</div>'+
+      '<div class="ov-card pop"><div class="n" style="color:#5eead4">+'+q.kr+' kr</div><div class="n" style="color:#b39cff">+'+q.xp+' XP</div>'+
+      (up?'<div class="st" style="margin-top:8px">Nytt klistremerke låst opp: Måne</div>':'')+(chest?'<div class="st" style="margin-top:8px">Ny kiste: Mystery Box</div>':'')+'</div>'+
+      '<button class="btn" style="width:240px" id="ovok">Fortsett</button>');
+  }
+  function openChest(i){
+    var c=S.chests.splice(i,1)[0];
+    var pool=ITEMS.filter(function(it){return S.inv.indexOf(it.id)<0});
+    var r=Math.random(),title,sub;
+    if(pool.length&&r<.75){var it=pick(pool);S.inv.push(it.id);title=it.n;sub='Nytt '+({theme:'tema',frame:'ramme',sticker:'klistremerke',acc:'tilbehør',top:'overdel',pet:'kjæledyr'}[it.slot])+'. Ta det på under Meg.'}
+    else{S.coins+=30;title='+30 mynter';sub='Til butikken som kommer senere.'}
+    jingle([200,300,500,800,1200]);vib([40,30,80]);
+    showOv('<div class="ov-sub">'+c.t+'</div><div class="ov-card pop"><div class="n">'+esc(title)+'</div><div class="st" style="margin-top:6px">'+sub+'</div></div><button class="btn" style="width:240px" id="ovok">Fint</button>');
+  }
+  function spin(){
+    S.spinUsed=true;var g=pick([{t:'+15 XP',f:function(){addXp(15)}},{t:'+10 mynter',f:function(){S.coins+=10}},{t:'Streak-skjold',f:function(){}}]);
+    g.f();jingle([392,523,659]);
+    showOv('<div class="ov-sub">Daglig spin</div><div class="ov-card pop"><div class="n">'+g.t+'</div></div><button class="btn" style="width:240px" id="ovok">Fortsett</button>');
+  }
+
+  document.addEventListener('input',function(e){if(e.target.id==='f-name')S.name=e.target.value});
+  document.addEventListener('change',function(e){if(e.target.id==='f-name')render()});
+  document.addEventListener('click',function(e){
+    var el=e.target.closest('[data-a],[data-t],[data-cat],#modebtn');if(!el)return;
+    if(el.id==='modebtn'){S.mode=S.mode==='kid'?'parent':'kid';S.tab=S.mode==='kid'?'home':'p-home';render();return}
+    if(el.dataset.cat){S.cat=el.dataset.cat;render();return}
+    if(!el.dataset.a&&el.dataset.t){S.tab=el.dataset.t;render();beep(440,.06);return}
+    var a=el.dataset.a,id=+el.dataset.id,q=S.quests.filter(function(x){return x.id===id})[0];
+    if(a==='take'){q.st='taken';S.npc=(S.npc+1)%NPC.length;S.npcMsg=null;beep(520,.1,'square');toast('Quest tatt');render()}
+    else if(a==='done'){q.st='wait';beep(660,.15);toast('Sendt til mamma for godkjenning');render()}
+    else if(a==='approve'){approve(q)}
+    else if(a==='reject'){q.st='back';q.msg=pick(BACK);toast('Sendt tilbake med melding');render()}
+    else if(a==='del'){S.quests=S.quests.filter(function(x){return x.id!==id});render()}
+    else if(a==='create'){
+      var t=$('#f-t').value.trim();if(!t){toast('Skriv en tittel først');return}
+      S.quests.push({id:S.nid++,t:t,ic:'spark',kr:+$('#f-kr').value||0,xp:+$('#f-xp').value||0,rep:$('#f-r').value,st:'open',cat:'today'});
+      S.tab='p-home';toast('Quest opprettet');render()}
+    else if(a==='pay'){toast('Utbetalt '+S.kr+' kr');S.kr=0;jingle([784,1047]);render()}
+    else if(a==='msg'){S.npcMsg=el.dataset.m;toast('Sendt: '+el.dataset.m)}
+    else if(a==='open'){openChest(+el.dataset.i)}
+    else if(a==='spin'){spin()}
+    else if(a==='equip'){var it=ITEMS.filter(function(x){return x.id===el.dataset.id})[0];S.eq[it.slot]=(S.eq[it.slot]===it.id&&it.slot!=='theme'&&it.slot!=='top')?null:it.id;S.avDone=true;beep(600,.08);render()}
+    else if(a==='title'){S.title=el.dataset.t;render()}
+    else if(a==='goavatar'){S.tab='me';render()}
+    else if(a==='g'){S.av.g=el.dataset.v;S.av.hs=({f:'long',m:'short',n:'bob'})[el.dataset.v];S.avDone=true;render()}
+    else if(a==='skin'||a==='hs'||a==='hc'||a==='tc'){S.av[a]=el.dataset.v;S.avDone=true;render()}
+    else if(a==='preset'){var p=PRESETS[+el.dataset.i];S.av={g:p.g,skin:p.skin,hs:p.hs,hc:p.hc,tc:p.tc};S.eq.top=p.top;S.avDone=true;beep(600,.08);render()}
+  });
+  render();
+})();
+</script>
+
+</body></html>
