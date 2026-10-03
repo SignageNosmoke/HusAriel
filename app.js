@@ -4,7 +4,7 @@ import { ico, QUEST_ICONS, ITEMS, ITEMBY, PRICE, RARITY_NAME, SLOT_NAME, SKIN, H
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const S = { view: 'loading', user: null, profile: null, data: null, tab: '', cat: 'today', authMode: 'in', startMode: 'choose', err: '', form: null, ov: null, sheet: false, confirm: null, dirty: false, prevSeen: 0, busy: false, newCodes: null };
+const S = { joining: false, view: 'loading', user: null, profile: null, data: null, tab: '', cat: 'today', authMode: 'in', startMode: 'choose', err: '', form: null, ov: null, sheet: false, confirm: null, dirty: false, prevSeen: 0, busy: false, newCodes: null };
 let store, unsub = null;
 
 const NPC = ['Oppvaskmaskinen har ikke tømt seg selv. Fortsatt.', 'Gratis XP ligger her. Bare sånn at du vet det.', 'Én quest til, så holder streaken.', 'Alt kan gjøres på under 10 minutter. Sjekket.', 'Det er stille hjemme. Mistenkelig stille.', 'Mamma og pappa ser at du åpner appen. Bare så du vet det.'];
@@ -34,7 +34,7 @@ const vib = n => { try { navigator.vibrate && navigator.vibrate(n); } catch (e) 
 function toast(m) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; ($('#app') || document.body).appendChild(t); setTimeout(() => t.remove(), 2600); }
 function friendly(e) {
   const c = (e && (e.code || e.message)) || '';
-  const m = { 'auth/invalid-credential': 'Feil e-post eller passord.', 'auth/wrong-password': 'Feil e-post eller passord.', 'auth/user-not-found': 'Feil e-post eller passord.', 'auth/email-already-in-use': 'Den e-posten er allerede i bruk. Logg inn i stedet.', 'auth/weak-password': 'Passordet må ha minst 6 tegn.', 'auth/invalid-email': 'E-postadressen ser ikke riktig ut.', 'auth/network-request-failed': 'Ingen nett akkurat nå.', 'auth/unauthorized-domain': 'Dette nettstedet er ikke godkjent i Firebase (README, steg 5).', 'auth/operation-not-allowed': 'Innlogging med e-post er ikke slått på i Firebase (README, steg 2).', 'auth/too-many-requests': 'For mange forsøk. Vent litt og prøv igjen.', 'permission-denied': 'Ikke tilgang. Sjekk at reglene er publisert (README, steg 3).', 'code-not-found': 'Fant ikke den koden.', 'not-waiting': 'Den quest-en er allerede behandlet.' };
+  const m = { 'auth/invalid-credential': 'Feil e-post/kode eller passord.', 'auth/wrong-password': 'Feil e-post eller passord.', 'auth/user-not-found': 'Feil e-post eller passord.', 'auth/email-already-in-use': 'Den er allerede i bruk. Logg inn i stedet.', 'auth/weak-password': 'Passordet må ha minst 6 tegn.', 'auth/invalid-email': 'E-postadressen ser ikke riktig ut.', 'auth/network-request-failed': 'Ingen nett akkurat nå.', 'auth/unauthorized-domain': 'Dette nettstedet er ikke godkjent i Firebase (README, steg 4).', 'auth/operation-not-allowed': 'Innlogging med e-post er ikke slått på i Firebase (README, steg 2).', 'auth/too-many-requests': 'For mange forsøk. Vent litt og prøv igjen.', 'permission-denied': 'Ikke tilgang. Sjekk at reglene er publisert (README, steg 3).', 'code-not-found': 'Fant ikke den koden.', 'not-waiting': 'Den quest-en er allerede behandlet.' };
   for (const k in m) if (c.indexOf(k) >= 0) return m[k];
   return 'Noe gikk galt: ' + (e && e.message ? e.message : c);
 }
@@ -48,6 +48,7 @@ async function boot() {
   } catch (e) { console.error(e); $('#app').innerHTML = '<div class="center">Kunne ikke laste appen. Sjekk nettet og last siden på nytt.<br><small>' + esc(e.message) + '</small></div>'; return; }
   store.onAuth(async u => {
     S.user = u;
+    if (S.joining) return;
     if (unsub) { unsub(); unsub = null; }
     if (!u) { S.profile = null; S.data = null; S.view = 'auth'; render(); return; }
     try { S.profile = await store.getProfile(u.uid); } catch (e) { console.error(e); S.err = friendly(e); S.profile = null; }
@@ -62,6 +63,7 @@ function startFamily() {
   unsub = store.subscribeFamily(S.profile.familyId, S.profile.role, d => {
     const first = !S.data;
     S.data = d;
+    if (!isAdult() && !store.demo && d.children[S.profile.childId] && !d.children[S.profile.childId].joined && !S.joinSent) { S.joinSent = true; store.saveChild(S.profile.familyId, S.profile.childId, { joined: true }).catch(() => {}); }
     if (first || !S.tab) S.tab = isAdult() ? 'a-home' : 'home';
     S.view = 'app';
     softRender();
@@ -88,7 +90,18 @@ function unread() { const seen = S.profile.seenAt || 0; return myNotifs().filter
 function myNotifs() { const key = isAdult() ? 'adults' : S.profile.childId; return S.data.notifs.filter(n => n.to === key); }
 
 function authView() {
-  const m = S.authMode, up = m === 'up', rs = m === 'reset';
+  const m = S.authMode;
+  if (m === 'kid-up' || m === 'kid-in') {
+    const up = m === 'kid-up';
+    return '<div class="authbox"><h1>Hus<span style="color:var(--xp)">Helt</span></h1><div class="st" style="margin-bottom:22px">' + (up ? 'Første gang? Skriv inn koden du har fått av mamma eller pappa, og velg et passord.' : 'Logg inn med koden din og passordet ditt.') + '</div>' +
+      '<form id="kidform"><label class="field"><span>Koden din (for eksempel K7M2-9XQA)</span><input id="k-code" required maxlength="9" autocapitalize="characters" autocomplete="off"></label>' +
+      '<label class="field"><span>Passord' + (up ? ' (minst 6 tegn)' : '') + '</span><input id="k-pw" type="password" autocomplete="' + (up ? 'new-password' : 'current-password') + '" required minlength="6"></label>' +
+      (up ? '<div class="st" style="margin:-4px 0 12px">Husk passordet. Mangler du det senere, kan en forelder lage en ny kode til deg.</div>' : '') +
+      (S.err ? '<div class="err" role="alert">' + esc(S.err) + '</div>' : '') +
+      '<button class="btn" type="submit">' + (up ? 'Kom i gang' : 'Logg inn') + '</button></form>' +
+      '<div style="margin-top:14px;display:flex;flex-direction:column;gap:2px">' + (up ? '<button class="link" data-a="authmode" data-v="kid-in">Har du vært her før? Logg inn</button>' : '<button class="link" data-a="authmode" data-v="kid-up">Første gang? Bruk koden din</button>') + '<button class="link" data-a="authmode" data-v="in">Jeg er forelder</button></div></div>';
+  }
+  const up = m === 'up', rs = m === 'reset';
   return '<div class="authbox"><h1>Hus<span style="color:var(--xp)">Helt</span></h1><div class="st" style="margin-bottom:22px">Husarbeid som spill, for hele familien.</div>' +
     '<form id="authform"><label class="field"><span>E-post</span><input id="a-email" type="email" autocomplete="email" required></label>' +
     (rs ? '' : '<label class="field"><span>Passord' + (up ? ' (minst 6 tegn)' : '') + '</span><input id="a-pw" type="password" autocomplete="' + (up ? 'new-password' : 'current-password') + '" required minlength="6"></label>') +
@@ -96,7 +109,8 @@ function authView() {
     '<button class="btn" type="submit">' + (rs ? 'Send lenke for nytt passord' : up ? 'Lag konto' : 'Logg inn') + '</button></form>' +
     '<div style="margin-top:14px;display:flex;flex-direction:column;gap:2px">' +
     (up ? '<button class="link" data-a="authmode" data-v="in">Har du konto? Logg inn</button>' : '<button class="link" data-a="authmode" data-v="up">Ny her? Lag konto</button>') +
-    (rs ? '<button class="link" data-a="authmode" data-v="in">Tilbake til innlogging</button>' : '<button class="link" data-a="authmode" data-v="reset">Glemt passord?</button>') + '</div></div>';
+    (rs ? '<button class="link" data-a="authmode" data-v="in">Tilbake til innlogging</button>' : '<button class="link" data-a="authmode" data-v="reset">Glemt passord?</button>') +
+    '<button class="btn ghost" style="margin-top:14px" data-a="authmode" data-v="kid-up">Jeg er barn og har en kode</button></div></div>';
 }
 function startView() {
   const m = S.startMode;
@@ -168,7 +182,7 @@ function goalBlock(c, adult) {
   const ticks = [25, 50, 75].map(m => '<b class="' + (v.pct >= m ? 'hit' : '') + '" style="left:' + m + '%"></b>').join('');
   let sub;
   if (g.reached) sub = adult ? 'Målet er nådd. Husk å gi belønningen.' : 'Målet er nådd. Belønningen er din.';
-  else sub = (g.xp || 0) + ' av ' + g.target + ' XP' + (v.days != null ? ' · ' + v.days + ' dager igjen' : '') + (pace ? ' · ' + pace : '');
+  else sub = (g.xp || 0) + ' av ' + g.target + ' XP' + (g.need > 0 ? ' · ' + (g.pw || 0) + ' av ' + g.need + ' uker med ukemål nådd' : '') + (v.days != null ? ' · ' + v.days + ' dager igjen' : '') + (pace ? ' · ' + pace : '');
   return '<div class="card goal' + (g.reached ? ' reached' : '') + '"><div class="row"><div class="grow"><div class="st">' + (adult ? 'Langtidsmål' : 'Stort mål') + '</div><div class="gt">' + esc(g.title || 'Mål') + '</div>' + (g.prize ? '<div class="st">Belønning: ' + esc(g.prize) + '</div>' : '') + '</div><div class="gp">' + v.pct + '<small>%</small></div></div>' +
     '<div class="gbar"><i style="width:' + v.pct + '%"></i>' + ticks + '</div><div class="st" style="margin-top:8px">' + esc(sub) + '</div>' +
     (adult && g.reached ? '<button class="btn sm ok" style="margin-top:10px" data-a="goalclaim" data-c="' + c.id + '">Belønning gitt, fjern målet</button>' : '') + '</div>';
@@ -176,12 +190,16 @@ function goalBlock(c, adult) {
 function goalEditor(c) {
   const g = c.goal, pot = L.weeklyPotential(S.data.quests.filter(q => q.childId === c.id));
   if (!g) return '<div class="st" style="margin-top:12px">Langtidsmål (for eksempel en sydentur)</div><button class="btn sm ghost" style="margin-top:6px" data-a="goalnew" data-c="' + c.id + '">Lag langtidsmål</button>';
-  const v = L.goalView(g), id = c.id;
+  const v = L.goalView(g), id = c.id, hd = L.goalHardness(g, pot);
   const inp = (f, label, val, ex) => '<label class="field"><span>' + label + '</span><input data-f="' + f + '" data-c="' + id + '" value="' + esc(val) + '"' + (ex || '') + '></label>';
   let h = '<div class="st" style="margin-top:14px"><b>Langtidsmål</b></div>' +
     inp('gTitle', 'Navn', g.title, ' maxlength="30"') + inp('gPrize', 'Belønning', g.prize, ' maxlength="40"') +
     '<div class="two"><label class="field"><span>XP som kreves</span><input type="number" min="100" step="100" data-f="gTarget" data-c="' + id + '" value="' + g.target + '"></label>' +
     '<label class="field"><span>Frist (valgfri)</span><input type="date" data-f="gEnd" data-c="' + id + '" value="' + esc(g.end || '') + '"></label></div>' +
+    '<label class="field"><span>Uker der ukemålet må nås (0 = ikke krav)</span><input type="number" min="0" max="104" data-f="gNeed" data-c="' + id + '" value="' + (g.need || 0) + '"></label>' +
+    '<div class="st" style="margin-bottom:6px">Sett kravet som andel av maks mulig innsats:</div><div class="seg" style="margin-bottom:10px">' + [60, 70, 80, 90].map(n => '<button data-a="goalpct" data-c="' + id + '" data-v="' + n + '">' + n + ' %</button>').join('') + '</div>' +
+    (hd ? '<div class="st" style="margin-bottom:8px"><b>Hvor strengt er dette?</b> ' + (hd.pct != null ? hd.label + ' (' + hd.pct + ' % av maks mulig XP til fristen). ' : '') + 'Det tilsvarer ' + hd.weeksFull + ' uker der alle quests gjøres. ' + (hd.pct != null && hd.pct <= 40 ? 'Dette er lett å nå. Øk kravet hvis belønningen er stor.' : '') + '</div>' : '<div class="st" style="margin-bottom:8px">Legg inn quests først, så viser appen hvor strengt kravet er.</div>') +
+    '<div class="st" style="margin-bottom:8px">Appen kontrollerer ikke selve oppgaven. Det gjør du når du godkjenner, så godkjenn bare når det faktisk er gjort.</div>' +
     '<div class="st">Fremdrift: ' + (g.xp || 0) + ' av ' + g.target + ' XP (' + v.pct + ' %). XP teller fra ' + esc(g.start || '') + '.' + (pot ? ' Hvis alle quests til ' + esc(c.name) + ' gjøres hver uke, gir det ca. ' + pot + ' XP per uke.' : '') + (v.perWeek != null && !g.reached ? ' For å nå målet innen fristen trengs ca. ' + v.perWeek + ' XP per uke.' : '') + '</div>' +
     '<div class="two" style="margin-top:10px"><button class="btn sm ghost" style="width:100%" data-a="goalreset" data-c="' + id + '">' + (S.confirm === 'greset:' + id ? 'Trykk igjen for å nullstille' : 'Nullstill fremdrift') + '</button><button class="btn sm ghost" style="width:100%" data-a="goaldel" data-c="' + id + '">' + (S.confirm === 'gdel:' + id ? 'Trykk igjen for å slette' : 'Slett mål') + '</button></div>';
   return h;
@@ -251,8 +269,12 @@ function kMe() {
 function qHome(q) { return splitOn() ? (q.home && q.home !== 'both' ? q.home : curHome()) : 'a'; }
 function aHome() {
   const ks = kids(), pend = S.data.quests.filter(q => L.qState(q) === 'wait');
-  if (!ks.length) return '<div class="empty">Ingen barn er lagt til ennå.</div><button class="btn" data-a="tab" data-v="a-fam">Legg til barn</button>';
-  let h = '<h2>Venter på deg</h2>';
+  if (!ks.length) return '<h2>Kom i gang</h2><div class="card"><div class="st" style="margin-bottom:10px"><b>Steg 1 av 3.</b> Legg til barnet. Du får en kode som barnet bruker for å logge inn på sin egen telefon.</div><form id="childform"><label class="field"><span>Barnets navn eller kallenavn</span><input id="c-name" maxlength="14" required></label><button class="btn" type="submit">Legg til barn</button></form></div>';
+  let h = '';
+  ks.filter(c => !c.joined && !store.demo).forEach(c => {
+    h += '<div class="card goal"><div class="st"><b>' + esc(c.name) + ' har ikke logget inn ennå</b></div><div class="st" style="margin:8px 0">Steg 2 av 3: Gi koden til ' + esc(c.name) + '. Barnet åpner appen, trykker «Jeg er barn og har en kode», skriver koden og velger et passord.</div><span class="code">' + esc(c.code || '') + '</span><div class="two" style="margin-top:12px"><button class="btn sm" style="width:100%" data-a="share" data-c="' + c.id + '">Del invitasjon</button><button class="btn sm ghost" style="width:100%" data-a="newcode" data-c="' + c.id + '">Ny kode</button></div>' + (S.data.quests.some(q => q.childId === c.id) ? '' : '<div class="st" style="margin-top:12px"><b>Steg 3 av 3:</b> Legg inn quests under Quests-fanen. Der finnes en ferdig pakke med forslag.</div>') + '</div>';
+  });
+  h += '<h2>Venter på deg</h2>';
   h += pend.length ? pend.map(q => { const c = S.data.children[q.childId]; return '<div class="card"><div class="row"><div class="q" style="margin:0;padding:0;background:none"><div class="ico">' + ico(q.ic) + '</div></div><div class="grow"><div class="t" style="font-weight:700">' + esc(q.title) + '</div><div class="st">' + esc(c ? c.name : '') + ' · +' + q.kr + ' kr · +' + q.xp + ' XP' + (splitOn() ? ' · ' + esc(homeName(qHome(q))) : '') + '</div></div></div>' +
     '<label class="field" style="margin:12px 0 0"><span>Melding hvis du sender tilbake (valgfri)</span><input id="rm-' + q.id + '" maxlength="80"></label><div class="two" style="margin-top:10px"><button class="btn sm ghost" style="width:100%" data-a="reject" data-id="' + q.id + '">Send tilbake</button><button class="btn sm ok" style="width:100%" data-a="approve" data-id="' + q.id + '">Godkjenn</button></div></div>'; }).join('') : '<div class="empty">Ingenting å godkjenne akkurat nå.</div>';
   if (splitOn()) h += '<div class="st" style="margin-top:14px">Denne uka: ' + esc(homeName(curHome())) + '</div>';
@@ -273,7 +295,7 @@ function aQuests() {
     const qs = S.data.quests.filter(q => q.childId === c.id);
     h += '<h2>' + esc(c.name) + '</h2>' + (qs.length ? qs.map(q => '<div class="q"><div class="ico">' + ico(q.ic) + '</div><div class="grow"><div class="t">' + esc(q.title) + (q.boss ? ' · boss' : '') + '</div><div class="st">' + q.rep + ' · ' + q.kr + ' kr · ' + q.xp + ' XP' + (splitOn() && q.home && q.home !== 'both' ? ' · ' + esc(homeName(q.home)) : '') + '</div></div>' +
       '<button class="btn sm ghost" data-a="editquest" data-id="' + q.id + '" aria-label="Rediger ' + esc(q.title) + '">Endre</button>' +
-      (S.confirm === 'del:' + q.id ? '<button class="btn sm danger" data-a="delquest" data-id="' + q.id + '">Sikker?</button>' : '<button class="btn sm ghost" data-a="delquest" data-id="' + q.id + '" aria-label="Slett ' + esc(q.title) + '">' + ico('trash') + '</button>') + '</div>').join('') : '<div class="empty">Ingen quests ennå.</div>');
+      (S.confirm === 'del:' + q.id ? '<button class="btn sm danger" data-a="delquest" data-id="' + q.id + '">Sikker?</button>' : '<button class="btn sm ghost" data-a="delquest" data-id="' + q.id + '" aria-label="Slett ' + esc(q.title) + '">' + ico('trash') + '</button>') + '</div>').join('') : '<div class="empty">Ingen quests ennå.</div><button class="btn ghost" data-a="pack" data-c="' + c.id + '">Legg inn forslagspakke (7 vanlige quests)</button>');
   });
   return h;
 }
@@ -361,7 +383,7 @@ document.addEventListener('click', e => {
   if (el.dataset.a === 'closesheet' && e.target.closest('[data-stop]') && el.classList.contains('overlay')) return;
   act(el.dataset.a, el, e);
 });
-document.addEventListener('submit', e => { e.preventDefault(); const id = e.target.id; if (id === 'authform') doAuth(); else if (id === 'createform') doCreate(); else if (id === 'joinform') doJoin(); else if (id === 'childform') doAddChild(); });
+document.addEventListener('submit', e => { e.preventDefault(); const id = e.target.id; if (id === 'authform') doAuth(); else if (id === 'kidform') doKid(); else if (id === 'createform') doCreate(); else if (id === 'joinform') doJoin(); else if (id === 'childform') doAddChild(); });
 document.addEventListener('focusout', () => { setTimeout(() => { if (S.dirty && !(document.activeElement && document.activeElement.matches && document.activeElement.matches('input,select,textarea'))) render(); }, 60); });
 document.addEventListener('change', e => { const t = e.target, f = t.dataset && t.dataset.f; if (f) onField(f, t); });
 
@@ -373,6 +395,22 @@ async function doAuth() {
       if (S.authMode === 'reset') { await store.resetPw(email); S.authMode = 'in'; S.err = ''; toast('Hvis e-posten finnes, er en lenke sendt.'); render(); return; }
       if (S.authMode === 'up') await store.signUp(email, pw); else await store.signIn(email, pw);
     } catch (e) { S.err = friendly(e); render(); }
+  });
+}
+const kidEmail = code => code.trim().toLowerCase().replace(/[^a-z0-9]/g, '') + '@barn.hushelt.app';
+async function doKid() {
+  const code = $('#k-code').value.trim().toUpperCase(), pw = $('#k-pw').value, up = S.authMode === 'kid-up';
+  S.err = '';
+  await run(async () => {
+    try {
+      if (!up) { await store.signIn(kidEmail(code), pw); return; }
+      S.joining = true;
+      const u = await store.signUp(kidEmail(code), pw);
+      const uid = (u && u.user && u.user.uid) || (S.user && S.user.uid);
+      try { await store.joinFamily(uid, { code, userName: 'Barn' }); }
+      catch (e) { S.joining = false; S.profile = null; S.view = 'start'; S.startMode = 'join'; S.err = friendly(e); render(); return; }
+      S.profile = await store.getProfile(uid); S.joining = false; S.tab = ''; startFamily();
+    } catch (e) { S.joining = false; S.err = friendly(e); render(); }
   });
 }
 async function doCreate() {
@@ -401,12 +439,15 @@ async function onField(f, t) {
   else if (f === 'homeA') await run(() => store.updateFamily(F, { 'homeNames.a': t.value.trim() || 'Hos mamma' }));
   else if (f === 'homeB') await run(() => store.updateFamily(F, { 'homeNames.b': t.value.trim() || 'Hos pappa' }));
   else if (f === 'myHome') await run(() => store.updateFamily(F, { ['adults.' + S.user.uid + '.home']: t.value || null }));
-  else if (/^g(Title|Prize|Target|End)$/.test(f) && t.dataset.c) {
+  else if (/^g(Title|Prize|Target|End|Need)$/.test(f) && t.dataset.c) {
     const c = S.data.children[t.dataset.c], g = Object.assign({}, c.goal);
     if (f === 'gTitle') g.title = t.value.trim();
     else if (f === 'gPrize') g.prize = t.value.trim();
-    else if (f === 'gTarget') { g.target = Math.max(100, Math.round(+t.value || 0)); if (g.reached && (g.xp || 0) < g.target) { g.reached = false; g.reachedAt = ''; } else if (!g.reached && (g.xp || 0) >= g.target) { g.reached = true; g.reachedAt = L.today(); } }
+    else if (f === 'gTarget') { g.target = Math.max(100, Math.round(+t.value || 0)); }
     else if (f === 'gEnd') g.end = t.value || '';
+    else if (f === 'gNeed') g.need = Math.max(0, Math.round(+t.value || 0));
+    const done = L.goalPct(g) >= 100;
+    if (g.reached && !done) { g.reached = false; g.reachedAt = ''; } else if (!g.reached && done) { g.reached = true; g.reachedAt = L.today(); }
     await run(() => store.saveChild(F, c.id, { goal: g }));
   }
   else if (f === 'goal') await run(() => store.saveChild(F, t.dataset.c, { weekGoal: +t.value }));
@@ -467,8 +508,12 @@ async function act(a, el, ev) {
     case 'delquest': if (S.confirm === 'del:' + id) { S.confirm = null; await run(() => store.deleteQuest(F, id), 'Slettet'); } else { S.confirm = 'del:' + id; render(); } break;
     case 'pay': await run(() => { const c = S.data.children[el.dataset.c], h = el.dataset.h; return store.payout(F, c.id, h, c.owed[h] || 0, { name: myName() }); }, 'Utbetaling registrert'); jingle([784, 1047]); break;
     case 'undo': await run(() => store.undoLedger(F, id, { name: myName() }), 'Godkjenning trukket tilbake'); break;
-    case 'goalnew': { const t = L.today(), cid = el.dataset.c; await run(() => store.saveChild(F, cid, { goal: { on: true, title: 'Sydentur', prize: 'Tur til syden', target: 6000, xp: 0, start: t, end: L.addDays(t, 365), reached: false, reachedAt: '' } }), 'Mål opprettet'); break; }
-    case 'goalreset': { const cid = el.dataset.c; if (S.confirm === 'greset:' + cid) { S.confirm = null; const g = Object.assign({}, S.data.children[cid].goal, { xp: 0, reached: false, reachedAt: '', start: L.today() }); await run(() => store.saveChild(F, cid, { goal: g }), 'Fremdrift nullstilt'); } else { S.confirm = 'greset:' + cid; render(); } break; }
+    case 'share': { const c = S.data.children[el.dataset.c], url = location.href.split('#')[0].split('?')[0], txt = 'Hei ' + c.name + '! Åpne ' + url + ' , trykk «Jeg er barn og har en kode», skriv inn koden ' + c.code + ' og velg et passord.'; try { if (navigator.share) { await navigator.share({ text: txt }); break; } await navigator.clipboard.writeText(txt); toast('Invitasjonen er kopiert'); } catch (e) { /* avbrutt */ } break; }
+    case 'newcode': await run(async () => { const code = await store.newChildCode(F, el.dataset.c); toast('Ny kode: ' + code); }); break;
+    case 'pack': await run(async () => { for (const t of L.TEMPLATES.slice(0, 7)) await store.saveQuest(F, { title: t.title, ic: t.ic, kr: t.kr, xp: t.xp, rep: t.rep, boss: !!t.boss, childId: el.dataset.c, home: 'both' }); }, 'Quests lagt til'); break;
+    case 'goalpct': { const cid = el.dataset.c, c = S.data.children[cid], pot = L.weeklyPotential(S.data.quests.filter(q => q.childId === cid)); if (!pot) { toast('Legg inn quests først'); break; } const sg = L.goalSuggest(pot, c.goal.start, c.goal.end, +v); const g = Object.assign({}, c.goal, { target: sg.target, need: sg.need }); g.reached = L.goalPct(g) >= 100; await run(() => store.saveChild(F, cid, { goal: g }), 'Kravet er satt til ' + v + ' % av maks'); break; }
+    case 'goalnew': { const t = L.today(), cid = el.dataset.c, end = L.addDays(t, 365), pot = L.weeklyPotential(S.data.quests.filter(q => q.childId === cid)), sg = pot ? L.goalSuggest(pot, t, end, 80) : { target: 20000, need: 40 }; await run(() => store.saveChild(F, cid, { goal: { on: true, title: 'Sydentur', prize: 'Tur til syden', target: sg.target, need: sg.need, pw: 0, xp: 0, start: t, end, reached: false, reachedAt: '' } }), 'Mål opprettet. Kravet er satt til 80 % av maks.'); break; }
+    case 'goalreset': { const cid = el.dataset.c; if (S.confirm === 'greset:' + cid) { S.confirm = null; const g = Object.assign({}, S.data.children[cid].goal, { xp: 0, pw: 0, reached: false, reachedAt: '', start: L.today() }); await run(() => store.saveChild(F, cid, { goal: g }), 'Fremdrift nullstilt'); } else { S.confirm = 'greset:' + cid; render(); } break; }
     case 'goaldel': { const cid = el.dataset.c; if (S.confirm === 'gdel:' + cid) { S.confirm = null; await run(() => store.saveChild(F, cid, { goal: null }), 'Mål slettet'); } else { S.confirm = 'gdel:' + cid; render(); } break; }
     case 'goalclaim': await run(() => store.saveChild(F, el.dataset.c, { goal: null }), 'Målet er fjernet'); break;
     case 'swapweek': await run(() => store.updateFamily(F, { 'split.first': fam().split.first === 'a' ? 'b' : 'a' }), 'Byttet uke'); break;

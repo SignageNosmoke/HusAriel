@@ -11,7 +11,7 @@ export function createLocalStore() {
   const id = () => Math.random().toString(36).slice(2, 10);
   function seed() {
     const t = L.today();
-    const kid = { ...L.newChild('Deg'), code: 'DEMO-BARN' };
+    const kid = { ...L.newChild('Deg'), code: 'DEMO-BARN', joined: true };
     const quests = {};
     L.TEMPLATES.slice(0, 6).forEach((tp, i) => { quests['q' + i] = { title: tp.title, ic: tp.ic, kr: tp.kr, xp: tp.xp, rep: tp.rep, boss: !!tp.boss, childId: 'c1', home: 'both', st: 'open', by: '', doneKey: '' }; });
     return {
@@ -41,6 +41,7 @@ export function createLocalStore() {
     createFamily: ok, joinFamily: ok,
     subscribeFamily(fid, role, cb) { const f = () => cb(snapshot()); subs.add(f); setTimeout(f, 0); return () => subs.delete(f); },
     async addChild(fid, { name }) { const cid = id(), code = L.makeCode(); db.children[cid] = { ...L.newChild(name), code }; save(); return { cid, code }; },
+    async newChildCode(fid, cid) { const code = L.makeCode(); db.children[cid].code = code; save(); return code; },
     async saveChild(fid, cid, patch) { Object.assign(db.children[cid], patch); save(); },
     async updateFamily(fid, patch) {
       Object.keys(patch).forEach(k => {
@@ -60,7 +61,7 @@ export function createLocalStore() {
       const r = L.approve(c, q, s, who.home);
       db.children[q.childId] = { ...c, ...r.child };
       q.st = 'done'; q.doneKey = L.cycleKey(q.rep, s);
-      db.ledger[id()] = { at: Date.now(), type: 'quest', childId: q.childId, childName: c.name, title: q.title, kr: q.kr, xp: q.xp, home: who.home, wk: r.info.wk, di: r.info.di, g: r.info.g, by: who.name, undone: false, qid };
+      db.ledger[id()] = { at: Date.now(), type: 'quest', childId: q.childId, childName: c.name, title: q.title, kr: q.kr, xp: q.xp, home: who.home, wk: r.info.wk, di: r.info.di, g: r.info.g, pf: r.info.pf, by: who.name, undone: false, qid };
       db.notifs.push({ id: id(), at: Date.now(), type: 'approved', to: q.childId, from: who.name, text: q.title, payload: r.info });
       if (r.info.goalHit) db.notifs.push({ id: id(), at: Date.now() + 1, type: 'msg', to: 'adults', from: c.name, text: c.name + ' har nådd målet: ' + ((c.goal && c.goal.prize) || 'målet') });
       save(); return r.info;

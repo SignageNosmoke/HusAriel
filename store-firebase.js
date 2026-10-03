@@ -63,6 +63,13 @@ export function createFirebaseStore(cfg) {
       await b.commit();
       return { cid: cref.id, code };
     },
+    async newChildCode(fid, cid) {
+      const code = L.makeCode(), b = writeBatch(db);
+      b.set(doc(db, 'joinCodes', code), { familyId: fid, role: 'child', childId: cid });
+      b.update(doc(C(fid, 'children'), cid), { code });
+      await b.commit();
+      return code;
+    },
     saveChild: (fid, cid, patch) => updateDoc(doc(C(fid, 'children'), cid), clean(patch)),
     updateFamily: (fid, patch) => updateDoc(F(fid), clean(patch)),
     setProfile: (uid, patch) => updateDoc(doc(db, 'users', uid), clean(patch)),
@@ -87,7 +94,7 @@ export function createFirebaseStore(cfg) {
         const r = L.approve(cs.data(), q, s, who.home);
         tx.update(cref, clean(r.child));
         tx.update(qref, { st: 'done', doneKey: L.cycleKey(q.rep, s) });
-        tx.set(doc(C(fid, 'ledger')), clean({ at: Date.now(), type: 'quest', childId: q.childId, childName: cs.data().name, title: q.title, kr: q.kr, xp: q.xp, home: who.home, wk: r.info.wk, di: r.info.di, g: r.info.g, by: who.name, undone: false, qid }));
+        tx.set(doc(C(fid, 'ledger')), clean({ at: Date.now(), type: 'quest', childId: q.childId, childName: cs.data().name, title: q.title, kr: q.kr, xp: q.xp, home: who.home, wk: r.info.wk, di: r.info.di, g: r.info.g, pf: r.info.pf, by: who.name, undone: false, qid }));
         tx.set(doc(C(fid, 'notifs')), clean({ at: Date.now(), type: 'approved', to: q.childId, from: who.name, text: q.title, payload: r.info }));
         if (r.info.goalHit) {
           const gt = (cs.data().goal && cs.data().goal.prize) || 'målet';

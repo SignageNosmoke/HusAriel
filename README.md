@@ -38,7 +38,7 @@ Ikke bruk telefon-innlogging (SMS koster penger).
 ## 6. Første gangs bruk
 1. Åpne appen og trykk **Opprett konto** (e-post + passord). Velg «Opprett familie».
 2. **Familie-fanen → Legg til barn.** Du får en kode (XXXX-XXXX) per barn.
-3. Barnet åpner appen, lager konto og velger «Bli med med kode». Barnets kode gir barnevisning.
+3. Barnet trenger ikke e-post. Barnet åpner appen, trykker **Jeg er barn og har en kode**, skriver koden og velger et passord. På Kontroll-fanen ser du når barnet har logget inn, og der kan du dele invitasjonen (knappen «Del invitasjon»). Glemmer barnet passordet, trykker du **Ny kode** der, og barnet lager seg en ny innlogging med den nye koden. Dataene beholdes.
 4. Den andre forelderen gjør det samme med **Voksen-koden** (finnes under Familie).
 5. **Delt bosted** er valgfritt: skru det på under Familie, velg hvem som har første uke, og gi hjemmene navn. Tjent beløp føres på hjemmet som har uka. Hver forelder ser og betaler ut sitt. Bruk «Bytt uke» hvis rytmen forskyves. Familier uten delt bosted lar det stå av.
 6. Systerens familie lager en **egen** familie. Dere deler ikke data.
@@ -48,7 +48,7 @@ Ikke bruk telefon-innlogging (SMS koster penger).
 - **Android (Chrome):** menyen → *Installer app*.
 
 ## Langtidsmål (for eksempel sydentur)
-Under **Familie → barnets kort → Lag langtidsmål** setter du navn, belønning, XP som kreves og eventuelt en frist. Barnet ser en fremdriftsbar med prosent og merker ved 25, 50 og 75 %. Foreldre ser hvor mange XP per uke som trengs for å nå målet i tide, og hva barnet ville fått hvis alle quests ble gjort hver uke. Bruk det til å sette målet så høyt at det krever mye. XP teller fra startdatoen, og «Angre» på en godkjenning trekker også tilbake målet. Når målet er nådd, får foreldrene et varsel, og du trykker «Belønning gitt, fjern målet» når reisen er avtalt. Barnet kan ikke endre målet selv.
+Under **Familie → barnets kort → Lag langtidsmål** setter du navn, belønning, XP som kreves og eventuelt en frist. Barnet ser en fremdriftsbar med prosent og merker ved 25, 50 og 75 %. Foreldre ser hvor mange XP per uke som trengs for å nå målet i tide, og hva barnet ville fått hvis alle quests ble gjort hver uke. Appen viser hvor strengt kravet er (andel av maks mulig XP til fristen), og du kan sette det til 60, 70, 80 eller 90 % av maks med ett trykk. Standard er 80 %. Du kan også kreve at ukemålet nås i et antall uker, så barnet ikke bare kan jobbe i en kort periode. Quests som ikke er lagt inn, teller ikke med, så legg inn quests før du setter kravet. XP teller fra startdatoen, og «Angre» på en godkjenning trekker også tilbake målet. Når målet er nådd, får foreldrene et varsel, og du trykker «Belønning gitt, fjern målet» når reisen er avtalt. Barnet kan ikke endre målet selv.
 
 ## Varsler
 Varslene ligger inne i appen: bjelle, rød teller og tall i fanetittelen. De oppdateres i sanntid mens appen er åpen, og vises neste gang appen åpnes ellers. Push til lukket app er ikke med, siden det krever betalt Firebase-plan eller en ekstra tjeneste.

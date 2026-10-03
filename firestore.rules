@@ -53,7 +53,7 @@ service cloud.firestore {
         allow update: if isAdult(fid) || (
           isKid(fid, cid)
           && request.resource.data.diff(resource.data).affectedKeys()
-               .hasOnly(['av', 'eq', 'inv', 'chests', 'coins', 'title', 'name', 'spinDay'])
+               .hasOnly(['av', 'eq', 'inv', 'chests', 'coins', 'title', 'name', 'spinDay', 'joined'])
         );
       }
 
