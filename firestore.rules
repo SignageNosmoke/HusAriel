@@ -1,0 +1,83 @@
+rules_version = '2';
+// HusHelt – sikkerhetsregler for Firestore.
+// Lim inn i Firebase-konsollen: Firestore Database → Regler → Publiser.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function userDoc() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function hasProfile() { return signedIn() && exists(userDoc()); }
+    function prof() { return get(userDoc()).data; }
+    function inFam(fid) { return hasProfile() && prof().familyId == fid; }
+    function isAdult(fid) { return inFam(fid) && prof().role == 'adult'; }
+    function isKid(fid, cid) { return inFam(fid) && prof().role == 'child' && prof().childId == cid; }
+
+    // Brukerprofil: kun eieren
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      // Ny bruker: enten via gyldig kode, eller som eier av en familie som opprettes i samme batch
+      allow create: if signedIn() && request.auth.uid == uid && (
+        ('joinCode' in request.resource.data
+          && exists(/databases/$(database)/documents/joinCodes/$(request.resource.data.joinCode))
+          && get(/databases/$(database)/documents/joinCodes/$(request.resource.data.joinCode)).data.familyId == request.resource.data.familyId
+          && get(/databases/$(database)/documents/joinCodes/$(request.resource.data.joinCode)).data.role == request.resource.data.role
+          && get(/databases/$(database)/documents/joinCodes/$(request.resource.data.joinCode)).data.childId == request.resource.data.childId)
+        ||
+        (request.resource.data.role == 'adult'
+          && getAfter(/databases/$(database)/documents/families/$(request.resource.data.familyId)).data.ownerUid == request.auth.uid)
+      );
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenAt', 'name']);
+    }
+
+    // Invitasjonskoder: kan slås opp én og én, men ikke listes
+    match /joinCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && (
+        isAdult(request.resource.data.familyId)
+        || getAfter(/databases/$(database)/documents/families/$(request.resource.data.familyId)).data.ownerUid == request.auth.uid
+      );
+      allow update, delete: if false;
+    }
+
+    match /families/{fid} {
+      allow read: if inFam(fid);
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isAdult(fid);
+      allow delete: if false;
+
+      match /children/{cid} {
+        allow read: if inFam(fid);
+        allow create, delete: if isAdult(fid);
+        allow update: if isAdult(fid) || (
+          isKid(fid, cid)
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['av', 'eq', 'inv', 'chests', 'coins', 'title', 'name', 'spinDay'])
+        );
+      }
+
+      match /quests/{qid} {
+        allow read: if inFam(fid);
+        allow create, delete: if isAdult(fid);
+        allow update: if isAdult(fid) || (
+          isKid(fid, resource.data.childId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st', 'by'])
+          && request.resource.data.st in ['open', 'taken', 'wait']
+        );
+      }
+
+      match /notifs/{nid} {
+        allow read: if inFam(fid);
+        allow create: if isAdult(fid) || (inFam(fid) && prof().role == 'child' && request.resource.data.to == 'adults');
+        allow update: if false;
+        allow delete: if isAdult(fid);
+      }
+
+      // Regnskap: kun voksne
+      match /ledger/{lid} {
+        allow read, write: if isAdult(fid);
+      }
+    }
+  }
+}
